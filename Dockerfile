@@ -6,7 +6,7 @@ WORKDIR /app
 
 COPY . .
 
-RUN go mod download 
+RUN go mod download
 
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main .
 
@@ -17,7 +17,6 @@ RUN apk --no-cache add ca-certificates
 WORKDIR /root/
 
 COPY --from=builder /app/main .
-COPY --from=builder /app/.env .
 
 EXPOSE 8080
 
