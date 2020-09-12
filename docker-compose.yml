@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  auth:
+    container_name: tiny_goauth
+    build: .
+    ports: ['8080:8080']
+    environment:
+      DB_URL: $DB_URL
+    volumes:
+      - auth_app:/usr/src/app/
+    depends_on:
+      - db_auth
+    networks:
+      - auth_network
+
+  db_auth:
+    image: postgres:alpine
+    container_name: db_tiny_goauth
+    environment:
+      POSTGRES_USER: $DB_USER
+      POSTGRES_PASSWORD: $DB_PASSWORD
+      POSTGRES_DB: $DB_NAME
+      DATABASE_HOST: $DB_HOST
+    volumes:
+      - db_auth:/var/lib/postgresql/data
+    networks:
+      - auth_network
+
+  db_admin:
+    image: dpage/pgadmin4
+    container_name: db_tiny_goauth_admin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: $PGADMIN_EMAIL
+      PGADMIN_DEFAULT_PASSWORD: $PGADMIN_PASSWORD
+    depends_on:
+      - db_auth
+    ports: ['5050:80']
+    networks:
+      - auth_network
+    restart: unless-stopped
+
+volumes:
+  auth_app:
+  db_auth:
+
+networks:
+  auth_network:
