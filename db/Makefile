@@ -1,5 +1,7 @@
-migrate_up:
+up:
 	migrate -path /migrations -database $(DB_URL) -verbose up
 
-migrate_down:
+down:
 	migrate -path /migrations -database $(DB_URL) -verbose down
+
+.PHONY: up down
