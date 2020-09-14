@@ -40,6 +40,17 @@ services:
       - auth_network
     restart: unless-stopped
 
+  migrator:
+    build:
+      context: ./db
+    container_name: tiny_goauth_migrator
+    depends_on:
+      - db_auth
+    networks:
+      - auth_network
+    environment:
+      DB_URL: $DB_URL
+
 volumes:
   auth_app:
   db_auth:
