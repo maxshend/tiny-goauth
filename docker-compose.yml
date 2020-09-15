@@ -7,6 +7,9 @@ services:
     ports: ['8080:8080']
     environment:
       DB_URL: $DB_URL
+
+      APP_HOST: $APP_HOST
+      APP_PORT: $APP_PORT
     volumes:
       - auth_app:/usr/src/app/
     depends_on:
@@ -30,6 +33,8 @@ services:
   db_admin:
     image: dpage/pgadmin4
     container_name: db_tiny_goauth_admin
+    logging:
+      driver: none
     environment:
       PGADMIN_DEFAULT_EMAIL: $PGADMIN_EMAIL
       PGADMIN_DEFAULT_PASSWORD: $PGADMIN_PASSWORD
