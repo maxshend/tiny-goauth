@@ -9,10 +9,10 @@ import (
 
 // User represents data of a user in users table
 type User struct {
-	ID        int       `db:"id"`
-	Login     string    `db:"login"`
-	Password  string    `db:"password"`
-	CreatedAt time.Time `db:"created_at"`
+	ID        int       `db:"id" json:"id"`
+	Login     string    `db:"login" json:"login"`
+	Password  string    `db:"password" json:"-"`
+	CreatedAt time.Time `db:"created_at" json:"created_at"`
 }
 
 // CreateUser creates a new record in users database table
