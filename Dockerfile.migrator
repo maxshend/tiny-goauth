@@ -3,6 +3,6 @@ FROM migrate/migrate
 RUN apk update && apk add --no-cache make
 
 COPY /migrations /migrations
-COPY /Makefile /Makefile
+COPY /Makefile.migrator /Makefile
 
 ENTRYPOINT ["/bin/sh", "-c"]

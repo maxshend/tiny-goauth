@@ -47,7 +47,8 @@ services:
 
   migrator:
     build:
-      context: ./db
+      context: .
+      dockerfile: Dockerfile.migrator
     container_name: tiny_goauth_migrator
     depends_on:
       - db_auth

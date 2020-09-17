@@ -1,4 +1,4 @@
-package models
+package db
 
 import (
 	"context"
@@ -7,6 +7,6 @@ import (
 )
 
 // InitDB initializes connection to the database
-func InitDB(dataURL string) (*pgxpool.Pool, error) {
+func Init(dataURL string) (*pgxpool.Pool, error) {
 	return pgxpool.Connect(context.Background(), dataURL)
 }
