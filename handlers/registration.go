@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/go-playground/validator"
 	"github.com/maxshend/tiny_goauth/models"
 )
 
@@ -27,6 +28,13 @@ func EmailRegister(deps *Deps) func(http.ResponseWriter, *http.Request) {
 		err := dec.Decode(&user)
 		if err != nil {
 			http.Error(w, "Error while decoding json body", http.StatusInternalServerError)
+			return
+		}
+
+		validate := validator.New()
+		err = validate.Struct(user)
+		if err != nil {
+			respondError(w, http.StatusUnprocessableEntity, err.Error())
 			return
 		}
 

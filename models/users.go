@@ -11,8 +11,8 @@ import (
 // User represents data of a user in users table
 type User struct {
 	ID        int       `db:"id" json:"id"`
-	Login     string    `db:"login" json:"login"`
-	Password  string    `db:"password" json:"-"`
+	Email     string    `db:"email" json:"email" validate:"required,email"`
+	Password  string    `db:"password" json:"password" validate:"required,min=8"`
 	CreatedAt time.Time `db:"created_at" json:"created_at"`
 }
 
@@ -32,8 +32,8 @@ func (user *User) EncryptPassword() error {
 func CreateUser(db *pgxpool.Pool, user *User) error {
 	row := db.QueryRow(
 		context.Background(),
-		"INSERT INTO users(login, password) VALUES($1, $2) RETURNING id, created_at",
-		user.Login, user.Password,
+		"INSERT INTO users(email, password) VALUES($1, $2) RETURNING id, created_at",
+		user.Email, user.Password,
 	)
 
 	err := row.Scan(&user.ID, &user.CreatedAt)
