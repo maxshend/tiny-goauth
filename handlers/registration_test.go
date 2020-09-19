@@ -31,6 +31,8 @@ func TestEmailRegister(t *testing.T) {
 		return recorder
 	}
 	validateStatusCode := func(t *testing.T, recorder *httptest.ResponseRecorder, expected int) {
+		t.Helper()
+
 		if got := recorder.Code; got != expected {
 			t.Errorf("Returned wrong status code. Expected %d, got %d", expected, got)
 		}
