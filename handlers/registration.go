@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/go-playground/validator"
+	"github.com/go-playground/validator/v10"
 	"github.com/maxshend/tiny_goauth/models"
 )
 
@@ -16,7 +16,7 @@ func EmailRegister(deps *Deps) func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
-		if r.Header.Get("Content-Type") != "application/json" {
+		if r.Header.Get(contentTypeHeader) != jsonContentType {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
@@ -31,10 +31,9 @@ func EmailRegister(deps *Deps) func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
-		validate := validator.New()
-		err = validate.Struct(user)
+		err = deps.Validator.Struct(&user)
 		if err != nil {
-			respondError(w, http.StatusUnprocessableEntity, err.Error())
+			respondModelError(deps, w, err.(validator.ValidationErrors))
 			return
 		}
 
@@ -50,7 +49,7 @@ func EmailRegister(deps *Deps) func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
-		respondJSON(w, http.StatusOK, &user)
+		respondSuccess(w, http.StatusOK, &user)
 
 		return
 	}

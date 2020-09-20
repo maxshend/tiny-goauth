@@ -4,26 +4,42 @@ import (
 	"encoding/json"
 	"net/http"
 
+	ut "github.com/go-playground/universal-translator"
+	"github.com/go-playground/validator/v10"
 	"github.com/jackc/pgx/v4/pgxpool"
 )
 
 // Deps contains dependencies of the http handlers
 type Deps struct {
-	DB *pgxpool.Pool
+	DB         *pgxpool.Pool
+	Validator  *validator.Validate
+	Translator ut.Translator
 }
 
-func respondJSON(w http.ResponseWriter, status int, payload interface{}) {
+const contentTypeHeader = "Content-Type"
+const jsonContentType = "application/json"
+
+func respondSuccess(w http.ResponseWriter, status int, payload interface{}) {
 	response, err := json.Marshal(payload)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(contentTypeHeader, jsonContentType)
 	w.WriteHeader(status)
 	w.Write([]byte(response))
 }
 
-func respondError(w http.ResponseWriter, code int, message string) {
-	respondJSON(w, code, map[string]string{"error": message})
+func respondError(w http.ResponseWriter, code int, message interface{}) {
+	respondSuccess(w, code, map[string]interface{}{"errors": message})
+}
+
+func respondModelError(deps *Deps, w http.ResponseWriter, err validator.ValidationErrors) {
+	errResponse := make(map[string]string)
+	for _, err := range err {
+		errResponse[err.Field()] = err.Translate(deps.Translator)
+	}
+
+	respondError(w, http.StatusUnprocessableEntity, errResponse)
 }

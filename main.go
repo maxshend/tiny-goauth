@@ -8,6 +8,7 @@ import (
 
 	"github.com/maxshend/tiny_goauth/db"
 	"github.com/maxshend/tiny_goauth/handlers"
+	"github.com/maxshend/tiny_goauth/validations"
 )
 
 func main() {
@@ -17,7 +18,12 @@ func main() {
 	}
 	defer db.Close()
 
-	deps := &handlers.Deps{DB: db}
+	validator, translator, err := validations.Init()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	deps := &handlers.Deps{DB: db, Validator: validator, Translator: translator}
 	server := http.Server{
 		Addr:         ":" + os.Getenv("APP_PORT"),
 		Handler:      nil,

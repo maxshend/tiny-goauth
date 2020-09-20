@@ -3,14 +3,22 @@ package handlers
 import (
 	"bytes"
 	"io"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/maxshend/tiny_goauth/validations"
 )
 
 func TestEmailRegister(t *testing.T) {
-	var deps = &Deps{DB: nil}
+	validator, translator, err := validations.Init()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	deps := &Deps{DB: nil, Validator: validator, Translator: translator}
 	performRequest := func(t *testing.T, method string, body io.Reader, headers map[string]string) (recorder *httptest.ResponseRecorder) {
 		t.Helper()
 
@@ -49,13 +57,13 @@ func TestEmailRegister(t *testing.T) {
 	})
 
 	t.Run("returns InternalServerError when body isn't valid json", func(t *testing.T) {
-		headers := map[string]string{"Content-Type": "application/json"}
+		headers := map[string]string{contentTypeHeader: jsonContentType}
 		recorder := performRequest(t, "POST", strings.NewReader("invalid"), headers)
 		validateStatusCode(t, recorder, http.StatusInternalServerError)
 	})
 
 	t.Run("returns UnprocessableEntity with invalid user data", func(t *testing.T) {
-		headers := map[string]string{"Content-Type": "application/json"}
+		headers := map[string]string{contentTypeHeader: jsonContentType}
 		body := bytes.NewBuffer([]byte(`{"email": "invalid.mail.com", "password": "foobar123"}`))
 		recorder := performRequest(t, "POST", body, headers)
 		validateStatusCode(t, recorder, http.StatusUnprocessableEntity)

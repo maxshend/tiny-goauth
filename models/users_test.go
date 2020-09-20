@@ -3,7 +3,7 @@ package models
 import (
 	"testing"
 
-	"github.com/go-playground/validator"
+	"github.com/maxshend/tiny_goauth/validations"
 )
 
 type TestData struct {
@@ -18,7 +18,7 @@ func TestUser(t *testing.T) {
 		TestData{User: &User{Email: "valid@mail.com", Password: "1234567"}, Valid: false},
 	}
 
-	validate := validator.New()
+	validate, _, _ := validations.Init()
 
 	for _, data := range testData {
 		err := validate.Struct(data.User)

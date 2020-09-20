@@ -12,7 +12,7 @@ import (
 type User struct {
 	ID        int       `db:"id" json:"id"`
 	Email     string    `db:"email" json:"email" validate:"required,email"`
-	Password  string    `db:"password" json:"password" validate:"required,min=8"`
+	Password  string    `db:"password" json:"password" validate:"required,password"`
 	CreatedAt time.Time `db:"created_at" json:"created_at"`
 }
 
