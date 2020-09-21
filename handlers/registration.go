@@ -43,7 +43,7 @@ func EmailRegister(deps *Deps) func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
-		err = models.CreateUser(deps.DB, &user)
+		err = deps.DB.CreateUser(&user)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return

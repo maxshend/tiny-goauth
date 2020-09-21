@@ -3,28 +3,44 @@ package handlers
 import (
 	"bytes"
 	"io"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/maxshend/tiny_goauth/models"
 	"github.com/maxshend/tiny_goauth/validations"
 )
+
+type TestDL struct {
+	User models.User
+}
+
+func (t *TestDL) CreateUser(user *models.User) error {
+	user.ID = t.User.ID
+	user.CreatedAt = t.User.CreatedAt
+
+	return nil
+}
+
+func (t *TestDL) Close() {}
 
 func TestEmailRegister(t *testing.T) {
 	validator, translator, err := validations.Init()
 	if err != nil {
-		log.Fatal(err)
+		t.Error(err)
 	}
+	testUser := models.User{ID: 1, Email: "test@mail.com", Password: "password", CreatedAt: time.Now()}
+	db := &TestDL{User: testUser}
 
-	deps := &Deps{DB: nil, Validator: validator, Translator: translator}
+	deps := &Deps{DB: db, Validator: validator, Translator: translator}
 	performRequest := func(t *testing.T, method string, body io.Reader, headers map[string]string) (recorder *httptest.ResponseRecorder) {
 		t.Helper()
 
 		request, err := http.NewRequest(method, "/email/register", body)
 		if err != nil {
-			t.Fatal(err)
+			t.Error(err)
 		}
 
 		for name, value := range headers {
@@ -67,5 +83,12 @@ func TestEmailRegister(t *testing.T) {
 		body := bytes.NewBuffer([]byte(`{"email": "invalid.mail.com", "password": "foobar123"}`))
 		recorder := performRequest(t, "POST", body, headers)
 		validateStatusCode(t, recorder, http.StatusUnprocessableEntity)
+	})
+
+	t.Run("returns OK with valid user data", func(t *testing.T) {
+		headers := map[string]string{contentTypeHeader: jsonContentType}
+		body := bytes.NewBuffer([]byte(`{"email": "valid@mail.com", "password": "12345678"}`))
+		recorder := performRequest(t, "POST", body, headers)
+		validateStatusCode(t, recorder, http.StatusOK)
 	})
 }

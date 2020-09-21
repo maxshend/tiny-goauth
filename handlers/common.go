@@ -6,12 +6,12 @@ import (
 
 	ut "github.com/go-playground/universal-translator"
 	"github.com/go-playground/validator/v10"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/maxshend/tiny_goauth/db"
 )
 
 // Deps contains dependencies of the http handlers
 type Deps struct {
-	DB         *pgxpool.Pool
+	DB         db.DataLayer
 	Validator  *validator.Validate
 	Translator ut.Translator
 }

@@ -14,57 +14,67 @@ import (
 var uni *ut.UniversalTranslator
 
 // Init creates new validator instance
-func Init() (*validator.Validate, ut.Translator, error) {
+func Init() (validate *validator.Validate, translator ut.Translator, err error) {
 	en := en.New()
 	uni = ut.New(en, en)
 
-	trans, found := uni.GetTranslator("en")
+	translator, found := uni.GetTranslator("en")
 	if !found {
-		return nil, nil, errors.New("Translator cannot be located")
+		err = errors.New("Translator cannot be located")
+		return
 	}
 
-	v := validator.New()
+	validate = validator.New()
 
-	en_translations.RegisterDefaultTranslations(v, trans)
+	en_translations.RegisterDefaultTranslations(validate, translator)
 
-	err := v.RegisterTranslation("required", trans, func(ut ut.Translator) error {
+	err = validate.RegisterTranslation("required", translator, func(ut ut.Translator) error {
 		return ut.Add("required", "{0} is a required field", true)
 	}, func(ut ut.Translator, fe validator.FieldError) string {
-		t, _ := ut.T("required", fe.Field())
+		t, err := ut.T("required", fe.Field())
+		if err != nil {
+			return fe.(error).Error()
+		}
 		return t
 	})
 	if err != nil {
-		return nil, nil, err
+		return
 	}
 
-	err = v.RegisterTranslation("email", trans, func(ut ut.Translator) error {
+	err = validate.RegisterTranslation("email", translator, func(ut ut.Translator) error {
 		return ut.Add("email", "{0} has invalid format", true)
 	}, func(ut ut.Translator, fe validator.FieldError) string {
-		t, _ := ut.T("email", fe.Field())
+		t, err := ut.T("email", fe.Field())
+		if err != nil {
+			return fe.(error).Error()
+		}
 		return t
 	})
 	if err != nil {
-		return nil, nil, err
+		return
 	}
 
-	err = v.RegisterTranslation("password", trans, func(ut ut.Translator) error {
-		return ut.Add("passwd", "{0} minimal length is 8 characters", true)
+	err = validate.RegisterTranslation("password", translator, func(ut ut.Translator) error {
+		return ut.Add("password", "{0} minimal length is 8 characters", true)
 	}, func(ut ut.Translator, fe validator.FieldError) string {
-		t, _ := ut.T("passwd", fe.Field())
+		t, err := ut.T("password", fe.Field())
+		if err != nil {
+			return fe.(error).Error()
+		}
 		return t
 	})
 	if err != nil {
-		return nil, nil, err
+		return
 	}
 
-	err = v.RegisterValidation("password", func(fl validator.FieldLevel) bool {
+	err = validate.RegisterValidation("password", func(fl validator.FieldLevel) bool {
 		return len(fl.Field().String()) > 7
 	})
 	if err != nil {
-		return nil, nil, err
+		return
 	}
 
-	v.RegisterTagNameFunc(func(fld reflect.StructField) string {
+	validate.RegisterTagNameFunc(func(fld reflect.StructField) string {
 		name := strings.SplitN(fld.Tag.Get("json"), ",", 2)[0]
 		if name == "-" {
 			return ""
@@ -72,5 +82,5 @@ func Init() (*validator.Validate, ut.Translator, error) {
 		return name
 	})
 
-	return v, trans, nil
+	return
 }

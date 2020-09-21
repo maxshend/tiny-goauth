@@ -1,10 +1,8 @@
 package models
 
 import (
-	"context"
 	"time"
 
-	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/maxshend/tiny_goauth/auth"
 )
 
@@ -24,22 +22,6 @@ func (user *User) EncryptPassword() error {
 	}
 
 	user.Password = hash
-
-	return nil
-}
-
-// CreateUser creates a new record in users database table
-func CreateUser(db *pgxpool.Pool, user *User) error {
-	row := db.QueryRow(
-		context.Background(),
-		"INSERT INTO users(email, password) VALUES($1, $2) RETURNING id, created_at",
-		user.Email, user.Password,
-	)
-
-	err := row.Scan(&user.ID, &user.CreatedAt)
-	if err != nil {
-		return err
-	}
 
 	return nil
 }
