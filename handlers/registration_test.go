@@ -26,13 +26,17 @@ func (t *TestDL) CreateUser(user *models.User) error {
 
 func (t *TestDL) Close() {}
 
+func (t *TestDL) ExistsWithField(field, value string) (bool, error) {
+	return false, nil
+}
+
 func TestEmailRegister(t *testing.T) {
-	validator, translator, err := validations.Init()
+	testUser := models.User{ID: 1, Email: "test@mail.com", Password: "password", CreatedAt: time.Now()}
+	db := &TestDL{User: testUser}
+	validator, translator, err := validations.Init(db)
 	if err != nil {
 		t.Error(err)
 	}
-	testUser := models.User{ID: 1, Email: "test@mail.com", Password: "password", CreatedAt: time.Now()}
-	db := &TestDL{User: testUser}
 
 	deps := &Deps{DB: db, Validator: validator, Translator: translator}
 	performRequest := func(t *testing.T, method string, body io.Reader, headers map[string]string) (recorder *httptest.ResponseRecorder) {
