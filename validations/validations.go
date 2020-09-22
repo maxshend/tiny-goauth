@@ -2,6 +2,7 @@ package validations
 
 import (
 	"errors"
+	"log"
 	"reflect"
 	"strings"
 
@@ -9,12 +10,13 @@ import (
 	ut "github.com/go-playground/universal-translator"
 	"github.com/go-playground/validator/v10"
 	en_translations "github.com/go-playground/validator/v10/translations/en"
+	"github.com/maxshend/tiny_goauth/db"
 )
 
 var uni *ut.UniversalTranslator
 
 // Init creates new validator instance
-func Init() (validate *validator.Validate, translator ut.Translator, err error) {
+func Init(db db.DataLayer) (validate *validator.Validate, translator ut.Translator, err error) {
 	en := en.New()
 	uni = ut.New(en, en)
 
@@ -28,47 +30,41 @@ func Init() (validate *validator.Validate, translator ut.Translator, err error) 
 
 	en_translations.RegisterDefaultTranslations(validate, translator)
 
-	err = validate.RegisterTranslation("required", translator, func(ut ut.Translator) error {
-		return ut.Add("required", "{0} is a required field", true)
-	}, func(ut ut.Translator, fe validator.FieldError) string {
-		t, err := ut.T("required", fe.Field())
-		if err != nil {
-			return fe.(error).Error()
-		}
-		return t
-	})
+	err = registerTranslation(validate, translator, "required", "{0} is a required field")
 	if err != nil {
 		return
 	}
 
-	err = validate.RegisterTranslation("email", translator, func(ut ut.Translator) error {
-		return ut.Add("email", "{0} has invalid format", true)
-	}, func(ut ut.Translator, fe validator.FieldError) string {
-		t, err := ut.T("email", fe.Field())
-		if err != nil {
-			return fe.(error).Error()
-		}
-		return t
-	})
+	err = registerTranslation(validate, translator, "email", "{0} has invalid format")
 	if err != nil {
 		return
 	}
 
-	err = validate.RegisterTranslation("password", translator, func(ut ut.Translator) error {
-		return ut.Add("password", "{0} minimal length is 8 characters", true)
-	}, func(ut ut.Translator, fe validator.FieldError) string {
-		t, err := ut.T("password", fe.Field())
-		if err != nil {
-			return fe.(error).Error()
-		}
-		return t
-	})
+	err = registerTranslation(validate, translator, "password", "{0} minimal length is 8 characters")
+	if err != nil {
+		return
+	}
+
+	err = registerTranslation(validate, translator, "unique_user", "this {0} is already taken")
 	if err != nil {
 		return
 	}
 
 	err = validate.RegisterValidation("password", func(fl validator.FieldLevel) bool {
 		return len(fl.Field().String()) > 7
+	})
+	if err != nil {
+		return
+	}
+
+	err = validate.RegisterValidation("unique_user", func(fl validator.FieldLevel) bool {
+		exists, err := db.ExistsWithField(fl.FieldName(), fl.Field().String())
+		if err != nil {
+			log.Print(err.Error())
+			return false
+		}
+
+		return !exists
 	})
 	if err != nil {
 		return
@@ -83,4 +79,16 @@ func Init() (validate *validator.Validate, translator ut.Translator, err error) 
 	})
 
 	return
+}
+
+func registerTranslation(validate *validator.Validate, translator ut.Translator, name, message string) error {
+	return validate.RegisterTranslation(name, translator, func(ut ut.Translator) error {
+		return ut.Add(name, message, true)
+	}, func(ut ut.Translator, fe validator.FieldError) string {
+		t, err := ut.T(name, fe.Field())
+		if err != nil {
+			return fe.(error).Error()
+		}
+		return t
+	})
 }

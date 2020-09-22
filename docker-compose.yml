@@ -3,7 +3,9 @@ version: '3.8'
 services:
   auth:
     container_name: tiny_goauth
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.development
     ports: ['8080:8080']
     environment:
       DB_URL: $DB_URL
@@ -11,7 +13,7 @@ services:
       APP_HOST: $APP_HOST
       APP_PORT: $APP_PORT
     volumes:
-      - auth_app:/usr/src/app/
+      - ./:/app
     depends_on:
       - db_auth
     networks:
@@ -58,7 +60,6 @@ services:
       DB_URL: $DB_URL
 
 volumes:
-  auth_app:
   db_auth:
 
 networks:

@@ -1,0 +1,11 @@
+FROM golang:alpine
+
+RUN apk update && apk add --no-cache git
+
+WORKDIR /app
+
+COPY . .
+
+RUN ["go", "get", "github.com/githubnemo/CompileDaemon"]
+
+ENTRYPOINT CompileDaemon -log-prefix=false -build="go build -o hot_reload_exec ." -command="./hot_reload_exec"

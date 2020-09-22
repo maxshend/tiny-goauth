@@ -10,6 +10,7 @@ import (
 // DataLayer is the interface that wraps methods to access database
 type DataLayer interface {
 	CreateUser(*models.User) error
+	ExistsWithField(field, value string) (bool, error)
 	Close()
 }
 

@@ -18,7 +18,7 @@ func main() {
 	}
 	defer db.Close()
 
-	validator, translator, err := validations.Init()
+	validator, translator, err := validations.Init(db)
 	if err != nil {
 		log.Fatal(err)
 	}
