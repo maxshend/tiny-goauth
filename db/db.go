@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 
+	"github.com/go-playground/validator"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/maxshend/tiny_goauth/models"
 )
@@ -10,7 +11,7 @@ import (
 // DataLayer is the interface that wraps methods to access database
 type DataLayer interface {
 	CreateUser(*models.User) error
-	ExistsWithField(field, value string) (bool, error)
+	ExistsWithField(fl validator.FieldLevel) (bool, error)
 	Close()
 }
 

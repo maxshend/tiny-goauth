@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/maxshend/tiny_goauth/auth"
 	"github.com/maxshend/tiny_goauth/models"
 )
 
@@ -37,11 +38,13 @@ func EmailRegister(deps *Deps) func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
-		err = user.EncryptPassword()
+		hash, err := auth.EncryptPassword(user.Password)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+
+		user.Password = hash
 
 		err = deps.DB.CreateUser(&user)
 		if err != nil {

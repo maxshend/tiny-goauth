@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-playground/validator"
 	"github.com/maxshend/tiny_goauth/models"
 	"github.com/maxshend/tiny_goauth/validations"
 )
@@ -26,7 +27,7 @@ func (t *TestDL) CreateUser(user *models.User) error {
 
 func (t *TestDL) Close() {}
 
-func (t *TestDL) ExistsWithField(field, value string) (bool, error) {
+func (t *TestDL) ExistsWithField(fl validator.FieldLevel) (bool, error) {
 	return false, nil
 }
 

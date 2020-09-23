@@ -15,4 +15,10 @@ clean: down
 	docker system prune -f
 	docker volume prune -f
 
-.PHONY: up down test clean
+migrateup:
+	docker-compose run --rm migrator "make up"
+
+migratedown:
+	docker-compose run --rm migrator "make down"
+
+.PHONY: up down test clean migrateup migratedown

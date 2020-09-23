@@ -58,7 +58,7 @@ func Init(db db.DataLayer) (validate *validator.Validate, translator ut.Translat
 	}
 
 	err = validate.RegisterValidation("unique_user", func(fl validator.FieldLevel) bool {
-		exists, err := db.ExistsWithField(fl.FieldName(), fl.Field().String())
+		exists, err := db.ExistsWithField(fl)
 		if err != nil {
 			log.Print(err.Error())
 			return false
