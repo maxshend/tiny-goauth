@@ -12,6 +12,9 @@ services:
 
       APP_HOST: $APP_HOST
       APP_PORT: $APP_PORT
+
+      ACCESS_TOKEN_SECRET: $ACCESS_TOKEN_SECRET
+      REFRESH_TOKEN_SECRET: $REFRESH_TOKEN_SECRET
     volumes:
       - ./:/app
     depends_on:
@@ -32,7 +35,7 @@ services:
     networks:
       - auth_network
 
-  db_admin:
+  admindb:
     image: dpage/pgadmin4
     container_name: db_tiny_goauth_admin
     logging:
