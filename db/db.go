@@ -11,7 +11,8 @@ import (
 // DataLayer is the interface that wraps methods to access database
 type DataLayer interface {
 	CreateUser(*models.User) error
-	ExistsWithField(fl validator.FieldLevel) (bool, error)
+	UserExistsWithField(fl validator.FieldLevel) (bool, error)
+	UserByEmail(string) (*models.User, error)
 	Close()
 }
 

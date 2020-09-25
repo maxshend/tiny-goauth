@@ -10,12 +10,12 @@ import (
 
 // TokenDetails represents tokens details needed for authentication
 type TokenDetails struct {
-	Access           string
-	Refresh          string
-	AccessUUID       string
-	RefreshUUID      string
-	AccessExpiresAt  int64
-	RefreshExpiresAt int64
+	Access           string `json:"access_token"`
+	Refresh          string `json:"refresh_token"`
+	AccessUUID       string `json:"-"`
+	RefreshUUID      string `json:"-"`
+	AccessExpiresAt  int64  `json:"-"`
+	RefreshExpiresAt int64  `json:"-"`
 }
 
 // Token creates access and refresh tokens for a user with specified ID

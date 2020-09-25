@@ -21,7 +21,7 @@ func (store *datastore) CreateUser(user *models.User) error {
 	return nil
 }
 
-func (store *datastore) ExistsWithField(fl validator.FieldLevel) (bool, error) {
+func (store *datastore) UserExistsWithField(fl validator.FieldLevel) (bool, error) {
 	result := false
 	err := store.pool.QueryRow(
 		context.Background(),
@@ -32,4 +32,17 @@ func (store *datastore) ExistsWithField(fl validator.FieldLevel) (bool, error) {
 	}
 
 	return result, nil
+}
+
+func (store *datastore) UserByEmail(email string) (*models.User, error) {
+	var user models.User
+	err := store.pool.QueryRow(
+		context.Background(),
+		"SELECT id, email, password, created_at FROM users WHERE email = $1 LIMIT 1", email,
+	).Scan(&user.ID, &user.Email, &user.Password, &user.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
 }

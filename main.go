@@ -32,6 +32,7 @@ func main() {
 	}
 
 	http.HandleFunc("/email/register", handlers.EmailRegister(deps))
+	http.HandleFunc("/email/login", handlers.EmailLogin(deps))
 
 	log.Fatal(server.ListenAndServe())
 }
