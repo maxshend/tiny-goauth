@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"fmt"
 	"os"
 	"time"
 
@@ -50,4 +51,25 @@ func Token(userID int) (*TokenDetails, error) {
 	}
 
 	return details, nil
+}
+
+// ValidateToken validates access token
+func ValidateToken(tokenString string) (*jwt.Token, error) {
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		_, ok := token.Method.(*jwt.SigningMethodHMAC)
+		if !ok || token.Header["alg"] != "HS256" {
+			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+		}
+
+		return []byte(os.Getenv("ACCESS_TOKEN_SECRET")), nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if _, ok := token.Claims.(jwt.MapClaims); !ok || !token.Valid {
+		return nil, err
+	}
+
+	return token, nil
 }
