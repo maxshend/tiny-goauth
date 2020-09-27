@@ -15,6 +15,80 @@ import (
 	"github.com/maxshend/tiny_goauth/validations"
 )
 
+func TestEmailRegister(t *testing.T) {
+	t.Run("returns MethodNotAllowed for non-POST requests", func(t *testing.T) {
+		recorder := performRequest(t, "GET", "/email/register", EmailRegister, nil, nil)
+
+		validateStatusCode(t, recorder, http.StatusMethodNotAllowed)
+	})
+
+	t.Run("returns BadRequest without json 'Conten-Type' header", func(t *testing.T) {
+		recorder := performRequest(t, "POST", "/email/register", EmailRegister, nil, nil)
+
+		validateStatusCode(t, recorder, http.StatusBadRequest)
+	})
+
+	t.Run("returns InternalServerError when body isn't valid json", func(t *testing.T) {
+		headers := map[string]string{contentTypeHeader: jsonContentType}
+		recorder := performRequest(t, "POST", "/email/register", EmailRegister, strings.NewReader("invalid"), headers)
+
+		validateStatusCode(t, recorder, http.StatusInternalServerError)
+	})
+
+	t.Run("returns UnprocessableEntity with invalid user data", func(t *testing.T) {
+		headers := map[string]string{contentTypeHeader: jsonContentType}
+		body := bytes.NewBuffer([]byte(`{"email": "invalid.mail.com", "password": "foobar123"}`))
+		recorder := performRequest(t, "POST", "/email/register", EmailRegister, body, headers)
+
+		validateStatusCode(t, recorder, http.StatusUnprocessableEntity)
+	})
+
+	t.Run("returns OK with valid user data", func(t *testing.T) {
+		headers := map[string]string{contentTypeHeader: jsonContentType}
+		body := bytes.NewBuffer([]byte(`{"email": "valid@mail.com", "password": "12345678"}`))
+		recorder := performRequest(t, "POST", "/email/register", EmailRegister, body, headers)
+
+		validateStatusCode(t, recorder, http.StatusOK)
+	})
+}
+
+func TestEmailLogin(t *testing.T) {
+	t.Run("returns MethodNotAllowed for non-POST requests", func(t *testing.T) {
+		recorder := performRequest(t, "GET", "/email/login", EmailLogin, nil, nil)
+
+		validateStatusCode(t, recorder, http.StatusMethodNotAllowed)
+	})
+
+	t.Run("returns BadRequest without json 'Conten-Type' header", func(t *testing.T) {
+		recorder := performRequest(t, "POST", "/email/login", EmailLogin, nil, nil)
+
+		validateStatusCode(t, recorder, http.StatusBadRequest)
+	})
+
+	t.Run("returns InternalServerError when body isn't valid json", func(t *testing.T) {
+		headers := map[string]string{contentTypeHeader: jsonContentType}
+		recorder := performRequest(t, "POST", "/email/login", EmailLogin, strings.NewReader("invalid"), headers)
+
+		validateStatusCode(t, recorder, http.StatusInternalServerError)
+	})
+
+	t.Run("returns Unauthorized with invalid user creds", func(t *testing.T) {
+		headers := map[string]string{contentTypeHeader: jsonContentType}
+		body := bytes.NewBuffer([]byte(`{"email": "invalid.mail.com", "password": "foobar123"}`))
+		recorder := performRequest(t, "POST", "/email/login", EmailLogin, body, headers)
+
+		validateStatusCode(t, recorder, http.StatusUnauthorized)
+	})
+
+	t.Run("returns OK with valid user creds", func(t *testing.T) {
+		headers := map[string]string{contentTypeHeader: jsonContentType}
+		body := bytes.NewBuffer([]byte(`{"email": "test@mail.com", "password": "password"}`))
+		recorder := performRequest(t, "POST", "/email/login", EmailLogin, body, headers)
+
+		validateStatusCode(t, recorder, http.StatusOK)
+	})
+}
+
 func performRequest(t *testing.T, method, path string, h func(deps *Deps) func(http.ResponseWriter, *http.Request), body io.Reader, headers map[string]string) (recorder *httptest.ResponseRecorder) {
 	t.Helper()
 
@@ -78,68 +152,4 @@ func (t *TestDL) Close() {}
 
 func (t *TestDL) UserExistsWithField(fl validator.FieldLevel) (bool, error) {
 	return false, nil
-}
-
-func TestEmailRegister(t *testing.T) {
-	t.Run("returns MethodNotAllowed for non-POST requests", func(t *testing.T) {
-		recorder := performRequest(t, "GET", "/email/register", EmailRegister, nil, nil)
-		validateStatusCode(t, recorder, http.StatusMethodNotAllowed)
-	})
-
-	t.Run("returns BadRequest without json 'Conten-Type' header", func(t *testing.T) {
-		recorder := performRequest(t, "POST", "/email/register", EmailRegister, nil, nil)
-		validateStatusCode(t, recorder, http.StatusBadRequest)
-	})
-
-	t.Run("returns InternalServerError when body isn't valid json", func(t *testing.T) {
-		headers := map[string]string{contentTypeHeader: jsonContentType}
-		recorder := performRequest(t, "POST", "/email/register", EmailRegister, strings.NewReader("invalid"), headers)
-		validateStatusCode(t, recorder, http.StatusInternalServerError)
-	})
-
-	t.Run("returns UnprocessableEntity with invalid user data", func(t *testing.T) {
-		headers := map[string]string{contentTypeHeader: jsonContentType}
-		body := bytes.NewBuffer([]byte(`{"email": "invalid.mail.com", "password": "foobar123"}`))
-		recorder := performRequest(t, "POST", "/email/register", EmailRegister, body, headers)
-		validateStatusCode(t, recorder, http.StatusUnprocessableEntity)
-	})
-
-	t.Run("returns OK with valid user data", func(t *testing.T) {
-		headers := map[string]string{contentTypeHeader: jsonContentType}
-		body := bytes.NewBuffer([]byte(`{"email": "valid@mail.com", "password": "12345678"}`))
-		recorder := performRequest(t, "POST", "/email/register", EmailRegister, body, headers)
-		validateStatusCode(t, recorder, http.StatusOK)
-	})
-}
-
-func TestEmailLogin(t *testing.T) {
-	t.Run("returns MethodNotAllowed for non-POST requests", func(t *testing.T) {
-		recorder := performRequest(t, "GET", "/email/login", EmailLogin, nil, nil)
-		validateStatusCode(t, recorder, http.StatusMethodNotAllowed)
-	})
-
-	t.Run("returns BadRequest without json 'Conten-Type' header", func(t *testing.T) {
-		recorder := performRequest(t, "POST", "/email/login", EmailLogin, nil, nil)
-		validateStatusCode(t, recorder, http.StatusBadRequest)
-	})
-
-	t.Run("returns InternalServerError when body isn't valid json", func(t *testing.T) {
-		headers := map[string]string{contentTypeHeader: jsonContentType}
-		recorder := performRequest(t, "POST", "/email/login", EmailLogin, strings.NewReader("invalid"), headers)
-		validateStatusCode(t, recorder, http.StatusInternalServerError)
-	})
-
-	t.Run("returns Unauthorized with invalid user creds", func(t *testing.T) {
-		headers := map[string]string{contentTypeHeader: jsonContentType}
-		body := bytes.NewBuffer([]byte(`{"email": "invalid.mail.com", "password": "foobar123"}`))
-		recorder := performRequest(t, "POST", "/email/login", EmailLogin, body, headers)
-		validateStatusCode(t, recorder, http.StatusUnauthorized)
-	})
-
-	t.Run("returns OK with valid user creds", func(t *testing.T) {
-		headers := map[string]string{contentTypeHeader: jsonContentType}
-		body := bytes.NewBuffer([]byte(`{"email": "test@mail.com", "password": "password"}`))
-		recorder := performRequest(t, "POST", "/email/login", EmailLogin, body, headers)
-		validateStatusCode(t, recorder, http.StatusOK)
-	})
 }

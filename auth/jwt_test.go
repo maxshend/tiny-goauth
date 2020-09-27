@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"log"
 	"os"
 	"testing"
 	"time"
@@ -25,24 +24,13 @@ func TestToken(t *testing.T) {
 	})
 }
 
-func generateFakeJWT(exp int64, sign []byte, method jwt.SigningMethod) string {
-	jwtToken := jwt.NewWithClaims(method, jwt.MapClaims{
-		"exp": exp,
-	})
-	token, err := jwtToken.SignedString(sign)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return token
-}
-
 func TestValidateToken(t *testing.T) {
 	secret := []byte(os.Getenv("ACCESS_TOKEN_SECRET"))
-	validTime := time.Now().Add(time.Minute * 15).Unix()
+	claims := jwt.MapClaims{"exp": time.Now().Add(time.Minute * 15).Unix()}
+	expiredClaims := jwt.MapClaims{"exp": time.Now().Add(time.Minute * -15).Unix()}
 
 	t.Run("with valid token", func(t *testing.T) {
-		token := generateFakeJWT(validTime, secret, jwt.SigningMethodHS256)
+		token := generateFakeJWT(t, secret, jwt.SigningMethodHS256, claims)
 
 		if _, err := ValidateToken(token); err != nil {
 			t.Errorf("unexpected error: %q", err)
@@ -50,16 +38,16 @@ func TestValidateToken(t *testing.T) {
 	})
 
 	t.Run("with invalid token", func(t *testing.T) {
-		expired := generateFakeJWT(time.Now().Add(-(time.Minute * 15)).Unix(), secret, jwt.SigningMethodHS256)
-		invalidSign := generateFakeJWT(validTime, []byte("invalid"), jwt.SigningMethodHS256)
-		invalidAlg := generateFakeJWT(validTime, secret, jwt.SigningMethodHS512)
+		expired := generateFakeJWT(t, secret, jwt.SigningMethodHS256, expiredClaims)
+		invalidSign := generateFakeJWT(t, []byte("invalid"), jwt.SigningMethodHS256, claims)
+		invalidAlg := generateFakeJWT(t, secret, jwt.SigningMethodHS512, claims)
 
 		tokenCases := []struct {
 			title string
 			token string
 			msg   string
 		}{
-			{title: "Expired", token: expired, msg: "Token is expired"},
+			{title: "Expired", token: expired, msg: "token is expired by 15m0s"},
 			{title: "Invalid signature", token: invalidSign, msg: "signature is invalid"},
 			{title: "Invalid format", token: "foobar", msg: "token contains an invalid number of segments"},
 			{title: "Invalid signing method", token: invalidAlg, msg: "Unexpected signing method: HS512"},
@@ -70,11 +58,25 @@ func TestValidateToken(t *testing.T) {
 				_, err := ValidateToken(tc.token)
 
 				if err == nil {
-					t.Errorf("expected to be invalid")
-				} else if err.Error() != tc.msg {
+					t.Fatal("expected to be invalid")
+				}
+
+				if err.Error() != tc.msg {
 					t.Errorf("expected %q got %q", tc.msg, err)
 				}
 			})
 		}
 	})
+}
+
+func generateFakeJWT(t *testing.T, sign []byte, method jwt.SigningMethod, claims jwt.Claims) string {
+	t.Helper()
+
+	jwtToken := jwt.NewWithClaims(method, claims)
+	token, err := jwtToken.SignedString(sign)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return token
 }

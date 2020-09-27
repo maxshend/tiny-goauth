@@ -19,6 +19,13 @@ type TokenDetails struct {
 	RefreshExpiresAt int64  `json:"-"`
 }
 
+// Claims represents data from JWT body
+type Claims struct {
+	UserID int    `json:"user_id"`
+	UUID   string `json:"uuid"`
+	jwt.StandardClaims
+}
+
 // Token creates access and refresh tokens for a user with specified ID
 func Token(userID int) (*TokenDetails, error) {
 	var err error
@@ -30,20 +37,24 @@ func Token(userID int) (*TokenDetails, error) {
 	details.AccessUUID = uuid.New().String()
 	details.RefreshUUID = uuid.New().String()
 
-	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"user_id": userID,
-		"exp":     details.AccessExpiresAt,
-		"uuid":    details.AccessUUID,
+	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, Claims{
+		userID,
+		details.AccessUUID,
+		jwt.StandardClaims{
+			ExpiresAt: details.AccessExpiresAt,
+		},
 	})
 	details.Access, err = accessToken.SignedString([]byte(os.Getenv("ACCESS_TOKEN_SECRET")))
 	if err != nil {
 		return nil, err
 	}
 
-	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"user_id": userID,
-		"exp":     details.RefreshExpiresAt,
-		"uuid":    details.RefreshUUID,
+	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, Claims{
+		userID,
+		details.AccessUUID,
+		jwt.StandardClaims{
+			ExpiresAt: details.AccessExpiresAt,
+		},
 	})
 	details.Refresh, err = refreshToken.SignedString([]byte(os.Getenv("REFRESH_TOKEN_SECRET")))
 	if err != nil {
@@ -54,10 +65,10 @@ func Token(userID int) (*TokenDetails, error) {
 }
 
 // ValidateToken validates access token
-func ValidateToken(tokenString string) (*jwt.Token, error) {
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		_, ok := token.Method.(*jwt.SigningMethodHMAC)
-		if !ok || token.Header["alg"] != "HS256" {
+func ValidateToken(tokenString string) (jwt.Claims, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
+		hmac, ok := token.Method.(*jwt.SigningMethodHMAC)
+		if !ok || hmac.Alg() != "HS256" {
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 		}
 
@@ -67,9 +78,10 @@ func ValidateToken(tokenString string) (*jwt.Token, error) {
 		return nil, err
 	}
 
-	if _, ok := token.Claims.(jwt.MapClaims); !ok || !token.Valid {
+	claims, ok := token.Claims.(Claims)
+	if !ok || !token.Valid {
 		return nil, err
 	}
 
-	return token, nil
+	return claims, nil
 }
