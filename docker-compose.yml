@@ -9,6 +9,7 @@ services:
     ports: ['8080:8080']
     environment:
       DB_URL: $DB_URL
+      REDIS_URL: $REDIS_URL
 
       APP_HOST: $APP_HOST
       APP_PORT: $APP_PORT
@@ -21,6 +22,7 @@ services:
       - db_auth
     networks:
       - auth_network
+      - redis
 
   db_auth:
     image: postgres:alpine
@@ -62,8 +64,14 @@ services:
     environment:
       DB_URL: $DB_URL
 
+  redis:
+    image: redis:alpine
+    networks: [ redis ]
+
 volumes:
   db_auth:
 
 networks:
   auth_network:
+  redis:
+    name: auth_redis

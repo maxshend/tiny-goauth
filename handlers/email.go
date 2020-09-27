@@ -100,15 +100,15 @@ func EmailLogin(deps *Deps) func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
-		token, err := auth.Token(user.ID)
-		if err != nil {
-			respondError(w, http.StatusUnauthorized, err.Error())
-			return
-		}
-
 		if !auth.ValidatePassword(loginUser.Password, user.Password) {
 			log.Printf("Invalid login credentials: %+v\n", loginUser)
 			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		token, err := auth.Token(user.ID)
+		if err != nil {
+			respondError(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
