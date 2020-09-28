@@ -15,9 +15,11 @@ import (
 	"github.com/maxshend/tiny_goauth/validations"
 )
 
+var jsonHeaders = map[string]string{contentTypeHeader: jsonContentType}
+
 func TestEmailRegister(t *testing.T) {
 	t.Run("returns MethodNotAllowed for non-POST requests", func(t *testing.T) {
-		recorder := performRequest(t, "GET", "/email/register", EmailRegister, nil, nil)
+		recorder := performRequest(t, "GET", "/email/register", EmailRegister, nil, jsonHeaders)
 
 		validateStatusCode(t, recorder, http.StatusMethodNotAllowed)
 	})
@@ -29,24 +31,21 @@ func TestEmailRegister(t *testing.T) {
 	})
 
 	t.Run("returns InternalServerError when body isn't valid json", func(t *testing.T) {
-		headers := map[string]string{contentTypeHeader: jsonContentType}
-		recorder := performRequest(t, "POST", "/email/register", EmailRegister, strings.NewReader("invalid"), headers)
+		recorder := performRequest(t, "POST", "/email/register", EmailRegister, strings.NewReader("invalid"), jsonHeaders)
 
 		validateStatusCode(t, recorder, http.StatusInternalServerError)
 	})
 
 	t.Run("returns UnprocessableEntity with invalid user data", func(t *testing.T) {
-		headers := map[string]string{contentTypeHeader: jsonContentType}
 		body := bytes.NewBuffer([]byte(`{"email": "invalid.mail.com", "password": "foobar123"}`))
-		recorder := performRequest(t, "POST", "/email/register", EmailRegister, body, headers)
+		recorder := performRequest(t, "POST", "/email/register", EmailRegister, body, jsonHeaders)
 
 		validateStatusCode(t, recorder, http.StatusUnprocessableEntity)
 	})
 
 	t.Run("returns OK with valid user data", func(t *testing.T) {
-		headers := map[string]string{contentTypeHeader: jsonContentType}
 		body := bytes.NewBuffer([]byte(`{"email": "valid@mail.com", "password": "12345678"}`))
-		recorder := performRequest(t, "POST", "/email/register", EmailRegister, body, headers)
+		recorder := performRequest(t, "POST", "/email/register", EmailRegister, body, jsonHeaders)
 
 		validateStatusCode(t, recorder, http.StatusOK)
 	})
@@ -54,7 +53,7 @@ func TestEmailRegister(t *testing.T) {
 
 func TestEmailLogin(t *testing.T) {
 	t.Run("returns MethodNotAllowed for non-POST requests", func(t *testing.T) {
-		recorder := performRequest(t, "GET", "/email/login", EmailLogin, nil, nil)
+		recorder := performRequest(t, "GET", "/email/login", EmailLogin, nil, jsonHeaders)
 
 		validateStatusCode(t, recorder, http.StatusMethodNotAllowed)
 	})
@@ -66,30 +65,27 @@ func TestEmailLogin(t *testing.T) {
 	})
 
 	t.Run("returns InternalServerError when body isn't valid json", func(t *testing.T) {
-		headers := map[string]string{contentTypeHeader: jsonContentType}
-		recorder := performRequest(t, "POST", "/email/login", EmailLogin, strings.NewReader("invalid"), headers)
+		recorder := performRequest(t, "POST", "/email/login", EmailLogin, strings.NewReader("invalid"), jsonHeaders)
 
 		validateStatusCode(t, recorder, http.StatusInternalServerError)
 	})
 
 	t.Run("returns Unauthorized with invalid user creds", func(t *testing.T) {
-		headers := map[string]string{contentTypeHeader: jsonContentType}
 		body := bytes.NewBuffer([]byte(`{"email": "invalid.mail.com", "password": "foobar123"}`))
-		recorder := performRequest(t, "POST", "/email/login", EmailLogin, body, headers)
+		recorder := performRequest(t, "POST", "/email/login", EmailLogin, body, jsonHeaders)
 
 		validateStatusCode(t, recorder, http.StatusUnauthorized)
 	})
 
 	t.Run("returns OK with valid user creds", func(t *testing.T) {
-		headers := map[string]string{contentTypeHeader: jsonContentType}
 		body := bytes.NewBuffer([]byte(`{"email": "test@mail.com", "password": "password"}`))
-		recorder := performRequest(t, "POST", "/email/login", EmailLogin, body, headers)
+		recorder := performRequest(t, "POST", "/email/login", EmailLogin, body, jsonHeaders)
 
 		validateStatusCode(t, recorder, http.StatusOK)
 	})
 }
 
-func performRequest(t *testing.T, method, path string, h func(deps *Deps) func(http.ResponseWriter, *http.Request), body io.Reader, headers map[string]string) (recorder *httptest.ResponseRecorder) {
+func performRequest(t *testing.T, method, path string, h func(deps *Deps) http.Handler, body io.Reader, headers map[string]string) (recorder *httptest.ResponseRecorder) {
 	t.Helper()
 
 	testUser := models.User{ID: 1, Email: "test@mail.com", Password: "password", CreatedAt: time.Now()}
@@ -111,7 +107,7 @@ func performRequest(t *testing.T, method, path string, h func(deps *Deps) func(h
 	}
 
 	recorder = httptest.NewRecorder()
-	handler := http.HandlerFunc(h(deps))
+	handler := h(deps)
 
 	handler.ServeHTTP(recorder, request)
 
@@ -152,4 +148,12 @@ func (t *TestDL) Close() {}
 
 func (t *TestDL) UserExistsWithField(fl validator.FieldLevel) (bool, error) {
 	return false, nil
+}
+
+func (t *TestDL) StoreCache(key string, payload interface{}, exp time.Duration) error {
+	return nil
+}
+
+func (t *TestDL) DeleteCache(key string) (int64, error) {
+	return 1, nil
 }

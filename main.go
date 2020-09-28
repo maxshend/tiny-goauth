@@ -31,8 +31,9 @@ func main() {
 		WriteTimeout: 1 * time.Second,
 	}
 
-	http.HandleFunc("/email/register", handlers.EmailRegister(deps))
-	http.HandleFunc("/email/login", handlers.EmailLogin(deps))
+	http.Handle("/email/register", handlers.EmailRegister(deps))
+	http.Handle("/email/login", handlers.EmailLogin(deps))
+	http.Handle("/logout", handlers.Logout(deps))
 
 	log.Fatal(server.ListenAndServe())
 }

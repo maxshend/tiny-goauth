@@ -11,15 +11,10 @@ import (
 )
 
 // EmailRegister handles email registration requests
-func EmailRegister(deps *Deps) func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
+func EmailRegister(deps *Deps) http.Handler {
+	return jsonOnly(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "POST" {
 			w.WriteHeader(http.StatusMethodNotAllowed)
-			return
-		}
-
-		if r.Header.Get(contentTypeHeader) != jsonContentType {
-			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 
@@ -63,22 +58,23 @@ func EmailRegister(deps *Deps) func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
-		respondSuccess(w, http.StatusOK, token)
-
-		return
-	}
-}
-
-// EmailLogin validates user email and password combination
-func EmailLogin(deps *Deps) func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != "POST" {
-			w.WriteHeader(http.StatusMethodNotAllowed)
+		err = saveTokenDetails(deps, user.ID, token)
+		if err != nil {
+			respondError(w, http.StatusUnauthorized, err.Error())
 			return
 		}
 
-		if r.Header.Get(contentTypeHeader) != jsonContentType {
-			w.WriteHeader(http.StatusBadRequest)
+		respondSuccess(w, http.StatusOK, token)
+
+		return
+	}))
+}
+
+// EmailLogin validates user email and password combination
+func EmailLogin(deps *Deps) http.Handler {
+	return jsonOnly(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "POST" {
+			w.WriteHeader(http.StatusMethodNotAllowed)
 			return
 		}
 
@@ -112,8 +108,14 @@ func EmailLogin(deps *Deps) func(http.ResponseWriter, *http.Request) {
 			return
 		}
 
+		err = saveTokenDetails(deps, user.ID, token)
+		if err != nil {
+			respondError(w, http.StatusUnauthorized, err.Error())
+			return
+		}
+
 		respondSuccess(w, http.StatusOK, token)
 
 		return
-	}
+	}))
 }

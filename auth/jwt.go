@@ -2,6 +2,7 @@ package auth
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"time"
 
@@ -21,13 +22,13 @@ type TokenDetails struct {
 
 // Claims represents data from JWT body
 type Claims struct {
-	UserID int    `json:"user_id"`
+	UserID int64  `json:"user_id"`
 	UUID   string `json:"uuid"`
 	jwt.StandardClaims
 }
 
 // Token creates access and refresh tokens for a user with specified ID
-func Token(userID int) (*TokenDetails, error) {
+func Token(userID int64) (*TokenDetails, error) {
 	var err error
 	details := &TokenDetails{}
 
@@ -78,7 +79,8 @@ func ValidateToken(tokenString string) (jwt.Claims, error) {
 		return nil, err
 	}
 
-	claims, ok := token.Claims.(Claims)
+	claims, ok := token.Claims.(*Claims)
+	log.Println(claims.UserID)
 	if !ok || !token.Valid {
 		return nil, err
 	}

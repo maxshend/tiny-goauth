@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"os"
+	"time"
 
 	"github.com/go-playground/validator"
 	"github.com/go-redis/redis/v8"
@@ -17,6 +18,8 @@ type DataLayer interface {
 	CreateUser(*models.User) error
 	UserExistsWithField(fl validator.FieldLevel) (bool, error)
 	UserByEmail(string) (*models.User, error)
+	StoreCache(key string, payload interface{}, exp time.Duration) error
+	DeleteCache(key string) (int64, error)
 	Close()
 }
 
@@ -47,7 +50,7 @@ func Init() (DataLayer, error) {
 }
 
 // Close closes connections to the datastores
-func (store *datastore) Close() {
-	store.db.Close()
-	defer store.rdb.Close()
+func (s *datastore) Close() {
+	s.db.Close()
+	defer s.rdb.Close()
 }
