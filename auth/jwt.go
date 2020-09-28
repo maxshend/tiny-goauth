@@ -2,7 +2,6 @@ package auth
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"time"
 
@@ -80,7 +79,6 @@ func ValidateToken(tokenString string) (jwt.Claims, error) {
 	}
 
 	claims, ok := token.Claims.(*Claims)
-	log.Println(claims.UserID)
 	if !ok || !token.Valid {
 		return nil, err
 	}
