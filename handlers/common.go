@@ -24,10 +24,81 @@ type contextKey int
 
 const contentTypeHeader = "Content-Type"
 const jsonContentType = "application/json"
+const successResponse = `{"success": true}`
 const (
 	tokenClaimsKey contextKey = iota
 )
-const successResponse = `{"success": true}`
+
+// Logout invalidates current JWT token
+func Logout(deps *Deps) http.Handler {
+	return jsonOnly(authenticatedOnly(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "DELETE" {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			return
+		}
+
+		c := r.Context().Value(tokenClaimsKey)
+		claims, ok := c.(*auth.Claims)
+		if !ok {
+			log.Println("Cannot extract token claims")
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		del, err := deps.DB.DeleteCache(claims.UUID)
+		if err != nil || del == 0 {
+			log.Println(err)
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		respondSuccess(w, http.StatusOK, nil)
+	})))
+}
+
+// Refresh returns a new access token if refresh token is valid
+func Refresh(deps *Deps) http.Handler {
+	return jsonOnly(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "POST" {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			return
+		}
+
+		token := r.Header.Get("Authorization")
+		c, err := auth.ValidateRefreshToken(token)
+		if err != nil {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		claims, ok := c.(*auth.Claims)
+		if !ok {
+			log.Println("Cannot extract token claims")
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		del, err := deps.DB.DeleteCache(claims.UUID)
+		if err != nil || del == 0 {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		td, err := auth.Token(claims.UserID)
+		if err != nil {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		err = saveTokenDetails(deps, claims.UserID, td)
+		if err != nil {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		respondSuccess(w, http.StatusOK, td)
+	}))
+}
 
 func respondSuccess(w http.ResponseWriter, status int, payload interface{}) {
 	response, err := json.Marshal(payload)
@@ -60,7 +131,7 @@ func authenticatedOnly(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		token := r.Header.Get("Authorization")
 
-		claims, err := auth.ValidateToken(token)
+		claims, err := auth.ValidateAccessToken(token)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
@@ -98,31 +169,4 @@ func saveTokenDetails(deps *Deps, userID int64, td *auth.TokenDetails) error {
 	}
 
 	return nil
-}
-
-// Logout invalidates current JWT token
-func Logout(deps *Deps) http.Handler {
-	return jsonOnly(authenticatedOnly(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != "DELETE" {
-			w.WriteHeader(http.StatusMethodNotAllowed)
-			return
-		}
-
-		c := r.Context().Value(tokenClaimsKey)
-		claims, ok := c.(*auth.Claims)
-		if !ok {
-			log.Println("Cannot extract token claims")
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
-
-		del, err := deps.DB.DeleteCache(claims.UUID)
-		if err != nil || del == 0 {
-			log.Println(err)
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
-
-		respondSuccess(w, http.StatusOK, nil)
-	})))
 }

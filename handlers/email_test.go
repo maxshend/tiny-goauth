@@ -157,3 +157,7 @@ func (t *TestDL) StoreCache(key string, payload interface{}, exp time.Duration) 
 func (t *TestDL) DeleteCache(key string) (int64, error) {
 	return 1, nil
 }
+
+func (t *TestDL) GetCacheValue(key string) (string, error) {
+	return "", nil
+}

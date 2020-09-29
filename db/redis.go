@@ -18,3 +18,13 @@ func (s *datastore) StoreCache(key string, payload interface{}, exp time.Duratio
 func (s *datastore) DeleteCache(key string) (int64, error) {
 	return s.rdb.Del(ctx, key).Result()
 }
+
+// GetCacheValue returns value from the storage by the key
+func (s *datastore) GetCacheValue(key string) (string, error) {
+	v, err := s.rdb.Get(ctx, key).Result()
+	if err != nil {
+		return "", err
+	}
+
+	return v, nil
+}

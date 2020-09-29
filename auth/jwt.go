@@ -51,9 +51,9 @@ func Token(userID int64) (*TokenDetails, error) {
 
 	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, Claims{
 		userID,
-		details.AccessUUID,
+		details.RefreshUUID,
 		jwt.StandardClaims{
-			ExpiresAt: details.AccessExpiresAt,
+			ExpiresAt: details.RefreshExpiresAt,
 		},
 	})
 	details.Refresh, err = refreshToken.SignedString([]byte(os.Getenv("REFRESH_TOKEN_SECRET")))
@@ -64,15 +64,24 @@ func Token(userID int64) (*TokenDetails, error) {
 	return details, nil
 }
 
-// ValidateToken validates access token
-func ValidateToken(tokenString string) (jwt.Claims, error) {
+// ValidateAccessToken validates access token
+func ValidateAccessToken(tokenString string) (jwt.Claims, error) {
+	return validateToken(tokenString, os.Getenv("ACCESS_TOKEN_SECRET"))
+}
+
+// ValidateRefreshToken validates refresh token
+func ValidateRefreshToken(tokenString string) (jwt.Claims, error) {
+	return validateToken(tokenString, os.Getenv("REFRESH_TOKEN_SECRET"))
+}
+
+func validateToken(tokenString, secret string) (jwt.Claims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
 		hmac, ok := token.Method.(*jwt.SigningMethodHMAC)
 		if !ok || hmac.Alg() != "HS256" {
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 		}
 
-		return []byte(os.Getenv("ACCESS_TOKEN_SECRET")), nil
+		return []byte(secret), nil
 	})
 	if err != nil {
 		return nil, err

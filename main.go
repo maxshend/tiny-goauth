@@ -34,6 +34,7 @@ func main() {
 	http.Handle("/email/register", handlers.EmailRegister(deps))
 	http.Handle("/email/login", handlers.EmailLogin(deps))
 	http.Handle("/logout", handlers.Logout(deps))
+	http.Handle("/refresh", handlers.Refresh(deps))
 
 	log.Fatal(server.ListenAndServe())
 }

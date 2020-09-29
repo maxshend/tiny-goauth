@@ -24,7 +24,7 @@ func TestToken(t *testing.T) {
 	})
 }
 
-func TestValidateToken(t *testing.T) {
+func TestValidateAccessToken(t *testing.T) {
 	secret := []byte(os.Getenv("ACCESS_TOKEN_SECRET"))
 	claims := jwt.MapClaims{"exp": time.Now().Add(time.Minute * 15).Unix()}
 	expiredClaims := jwt.MapClaims{"exp": time.Now().Add(time.Minute * -15).Unix()}
@@ -32,7 +32,7 @@ func TestValidateToken(t *testing.T) {
 	t.Run("with valid token", func(t *testing.T) {
 		token := generateFakeJWT(t, secret, jwt.SigningMethodHS256, claims)
 
-		if _, err := ValidateToken(token); err != nil {
+		if _, err := ValidateAccessToken(token); err != nil {
 			t.Errorf("unexpected error: %q", err)
 		}
 	})
@@ -55,7 +55,7 @@ func TestValidateToken(t *testing.T) {
 
 		for _, tc := range tokenCases {
 			t.Run(tc.title, func(t *testing.T) {
-				_, err := ValidateToken(tc.token)
+				_, err := ValidateAccessToken(tc.token)
 
 				if err == nil {
 					t.Fatal("expected to be invalid")

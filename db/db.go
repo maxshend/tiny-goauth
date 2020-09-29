@@ -20,6 +20,7 @@ type DataLayer interface {
 	UserByEmail(string) (*models.User, error)
 	StoreCache(key string, payload interface{}, exp time.Duration) error
 	DeleteCache(key string) (int64, error)
+	GetCacheValue(key string) (string, error)
 	Close()
 }
 
