@@ -32,7 +32,7 @@ const (
 
 // Logout invalidates current JWT token
 func Logout(deps *Deps) http.Handler {
-	return jsonHandler(deleteHandler(authenticatedHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return logHandler(deps, jsonHandler(deleteHandler(authenticatedHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		c := r.Context().Value(tokenClaimsKey)
 		claims, ok := c.(*auth.Claims)
 		if !ok {
@@ -49,12 +49,12 @@ func Logout(deps *Deps) http.Handler {
 		}
 
 		respondSuccess(w, http.StatusOK, nil)
-	}))))
+	})))))
 }
 
 // Refresh returns a new access token if refresh token is valid
 func Refresh(deps *Deps) http.Handler {
-	return jsonHandler(postHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return logHandler(deps, jsonHandler(postHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		token := r.Header.Get("Authorization")
 		c, err := auth.ValidateRefreshToken(token)
 		if err != nil {
@@ -88,7 +88,7 @@ func Refresh(deps *Deps) http.Handler {
 		}
 
 		respondSuccess(w, http.StatusOK, td)
-	})))
+	}))))
 }
 
 func respondSuccess(w http.ResponseWriter, status int, payload interface{}) {
