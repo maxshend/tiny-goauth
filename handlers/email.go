@@ -12,12 +12,7 @@ import (
 
 // EmailRegister handles email registration requests
 func EmailRegister(deps *Deps) http.Handler {
-	return jsonOnly(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != "POST" {
-			w.WriteHeader(http.StatusMethodNotAllowed)
-			return
-		}
-
+	return jsonHandler(postHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var user models.User
 		r.Body = http.MaxBytesReader(w, r.Body, 1048576)
 
@@ -67,17 +62,12 @@ func EmailRegister(deps *Deps) http.Handler {
 		respondSuccess(w, http.StatusOK, token)
 
 		return
-	}))
+	})))
 }
 
 // EmailLogin validates user email and password combination
 func EmailLogin(deps *Deps) http.Handler {
-	return jsonOnly(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != "POST" {
-			w.WriteHeader(http.StatusMethodNotAllowed)
-			return
-		}
-
+	return logHandler(deps, jsonHandler(postHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var loginUser models.User
 		r.Body = http.MaxBytesReader(w, r.Body, 1048576)
 
@@ -117,5 +107,5 @@ func EmailLogin(deps *Deps) http.Handler {
 		respondSuccess(w, http.StatusOK, token)
 
 		return
-	}))
+	}))))
 }

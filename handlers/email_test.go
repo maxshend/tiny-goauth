@@ -11,6 +11,7 @@ import (
 
 	"github.com/go-playground/validator"
 	"github.com/maxshend/tiny_goauth/auth"
+	"github.com/maxshend/tiny_goauth/logwrapper"
 	"github.com/maxshend/tiny_goauth/models"
 	"github.com/maxshend/tiny_goauth/validations"
 )
@@ -95,7 +96,7 @@ func performRequest(t *testing.T, method, path string, h func(deps *Deps) http.H
 		t.Error(err)
 	}
 
-	deps := &Deps{DB: db, Validator: validator, Translator: translator}
+	deps := &Deps{DB: db, Validator: validator, Translator: translator, Logger: logwrapper.New()}
 
 	request, err := http.NewRequest(method, path, body)
 	if err != nil {

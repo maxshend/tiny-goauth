@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -11,6 +10,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/maxshend/tiny_goauth/auth"
 	"github.com/maxshend/tiny_goauth/db"
+	"github.com/maxshend/tiny_goauth/logwrapper"
 )
 
 // Deps contains dependencies of the http handlers
@@ -18,6 +18,7 @@ type Deps struct {
 	DB         db.DataLayer
 	Validator  *validator.Validate
 	Translator ut.Translator
+	Logger     *logwrapper.StandardLogger
 }
 
 type contextKey int
@@ -31,12 +32,7 @@ const (
 
 // Logout invalidates current JWT token
 func Logout(deps *Deps) http.Handler {
-	return jsonOnly(authenticatedOnly(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != "DELETE" {
-			w.WriteHeader(http.StatusMethodNotAllowed)
-			return
-		}
-
+	return jsonHandler(deleteHandler(authenticatedHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		c := r.Context().Value(tokenClaimsKey)
 		claims, ok := c.(*auth.Claims)
 		if !ok {
@@ -53,17 +49,12 @@ func Logout(deps *Deps) http.Handler {
 		}
 
 		respondSuccess(w, http.StatusOK, nil)
-	})))
+	}))))
 }
 
 // Refresh returns a new access token if refresh token is valid
 func Refresh(deps *Deps) http.Handler {
-	return jsonOnly(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != "POST" {
-			w.WriteHeader(http.StatusMethodNotAllowed)
-			return
-		}
-
+	return jsonHandler(postHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		token := r.Header.Get("Authorization")
 		c, err := auth.ValidateRefreshToken(token)
 		if err != nil {
@@ -97,7 +88,7 @@ func Refresh(deps *Deps) http.Handler {
 		}
 
 		respondSuccess(w, http.StatusOK, td)
-	}))
+	})))
 }
 
 func respondSuccess(w http.ResponseWriter, status int, payload interface{}) {
@@ -125,32 +116,6 @@ func respondModelError(deps *Deps, w http.ResponseWriter, err validator.Validati
 	}
 
 	respondError(w, http.StatusUnprocessableEntity, errResponse)
-}
-
-func authenticatedOnly(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		token := r.Header.Get("Authorization")
-
-		claims, err := auth.ValidateAccessToken(token)
-		if err != nil {
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
-
-		ctx := context.WithValue(r.Context(), tokenClaimsKey, claims)
-		next.ServeHTTP(w, r.WithContext(ctx))
-	})
-}
-
-func jsonOnly(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Header.Get(contentTypeHeader) != jsonContentType {
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-
-		next.ServeHTTP(w, r)
-	})
 }
 
 func saveTokenDetails(deps *Deps, userID int64, td *auth.TokenDetails) error {

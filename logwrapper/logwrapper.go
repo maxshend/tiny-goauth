@@ -21,3 +21,10 @@ func New() *StandardLogger {
 
 	return standardLogger
 }
+
+var requestDetails = Event{0, "%d %q %q %q %q"}
+
+// RequestDetails is an HTTP request details
+func (l *StandardLogger) RequestDetails(code int, method, url, agent, addr string) {
+	l.Errorf(requestDetails.message, code, method, url, agent, addr)
+}
