@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 
 	"github.com/go-playground/validator/v10"
@@ -19,7 +18,7 @@ func EmailRegister(deps *Deps) http.Handler {
 		dec := json.NewDecoder(r.Body)
 		err := dec.Decode(&user)
 		if err != nil {
-			log.Println(err)
+			deps.Logger.RequestError(r, err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -32,7 +31,7 @@ func EmailRegister(deps *Deps) http.Handler {
 
 		hash, err := auth.EncryptPassword(user.Password)
 		if err != nil {
-			log.Println(err)
+			deps.Logger.RequestError(r, err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -41,14 +40,14 @@ func EmailRegister(deps *Deps) http.Handler {
 
 		err = deps.DB.CreateUser(&user)
 		if err != nil {
-			log.Println(err)
+			deps.Logger.RequestError(r, err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
 		token, err := auth.Token(user.ID)
 		if err != nil {
-			log.Println(err)
+			deps.Logger.RequestError(r, err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -74,20 +73,18 @@ func EmailLogin(deps *Deps) http.Handler {
 		dec := json.NewDecoder(r.Body)
 		err := dec.Decode(&loginUser)
 		if err != nil {
-			log.Println(err)
+			deps.Logger.RequestError(r, err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
 		user, err := deps.DB.UserByEmail(loginUser.Email)
 		if err != nil {
-			log.Printf("Error while getting user by email: %q\n", err.Error())
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
 
 		if !auth.ValidatePassword(loginUser.Password, user.Password) {
-			log.Printf("Invalid login credentials: %+v\n", loginUser)
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}

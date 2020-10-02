@@ -10,7 +10,7 @@ import (
 
 func authenticatedHandler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		token := r.Header.Get("Authorization")
+		token := r.Header.Get(auhtorizationHeader)
 
 		claims, err := auth.ValidateAccessToken(token)
 		if err != nil {
@@ -68,6 +68,6 @@ func logHandler(deps *Deps, next http.Handler) http.Handler {
 		w.WriteHeader(rec.Code)
 		rec.Body.WriteTo(w)
 
-		deps.Logger.RequestDetails(rec.Code, r.Method, r.RequestURI, r.UserAgent(), r.RemoteAddr)
+		deps.Logger.RequestDetails(r, rec.Code)
 	})
 }

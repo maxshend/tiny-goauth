@@ -2,7 +2,6 @@ package validations
 
 import (
 	"errors"
-	"log"
 	"reflect"
 	"strings"
 
@@ -14,6 +13,7 @@ import (
 )
 
 var uni *ut.UniversalTranslator
+var errCannotLocateTranslator = errors.New("Translator cannot be located")
 
 // Init creates new validator instance
 func Init(db db.DataLayer) (validate *validator.Validate, translator ut.Translator, err error) {
@@ -22,7 +22,7 @@ func Init(db db.DataLayer) (validate *validator.Validate, translator ut.Translat
 
 	translator, found := uni.GetTranslator("en")
 	if !found {
-		err = errors.New("Translator cannot be located")
+		err = errCannotLocateTranslator
 		return
 	}
 
@@ -60,7 +60,6 @@ func Init(db db.DataLayer) (validate *validator.Validate, translator ut.Translat
 	err = validate.RegisterValidation("unique_user", func(fl validator.FieldLevel) bool {
 		exists, err := db.UserExistsWithField(fl)
 		if err != nil {
-			log.Print(err.Error())
 			return false
 		}
 

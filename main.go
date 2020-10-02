@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"net/http"
 	"os"
 	"time"
@@ -13,18 +12,20 @@ import (
 )
 
 func main() {
+	logger := logwrapper.New()
+
 	db, err := db.Init()
 	if err != nil {
-		log.Fatal(err)
+		logger.FatalError(err)
 	}
 	defer db.Close()
 
 	validator, translator, err := validations.Init(db)
 	if err != nil {
-		log.Fatal(err)
+		logger.FatalError(err)
 	}
 
-	deps := &handlers.Deps{DB: db, Validator: validator, Translator: translator, Logger: logwrapper.New()}
+	deps := &handlers.Deps{DB: db, Validator: validator, Translator: translator, Logger: logger}
 	server := http.Server{
 		Addr:         ":" + os.Getenv("APP_PORT"),
 		Handler:      nil,
@@ -37,5 +38,5 @@ func main() {
 	http.Handle("/logout", handlers.Logout(deps))
 	http.Handle("/refresh", handlers.Refresh(deps))
 
-	log.Fatal(server.ListenAndServe())
+	logger.FatalError(server.ListenAndServe())
 }

@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	"time"
 
@@ -24,6 +23,7 @@ type Deps struct {
 type contextKey int
 
 const contentTypeHeader = "Content-Type"
+const auhtorizationHeader = "Authorization"
 const jsonContentType = "application/json"
 const successResponse = `{"success": true}`
 const (
@@ -36,14 +36,12 @@ func Logout(deps *Deps) http.Handler {
 		c := r.Context().Value(tokenClaimsKey)
 		claims, ok := c.(*auth.Claims)
 		if !ok {
-			log.Println("Cannot extract token claims")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
 
 		del, err := deps.DB.DeleteCache(claims.UUID)
 		if err != nil || del == 0 {
-			log.Println(err)
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -64,7 +62,6 @@ func Refresh(deps *Deps) http.Handler {
 
 		claims, ok := c.(*auth.Claims)
 		if !ok {
-			log.Println("Cannot extract token claims")
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}

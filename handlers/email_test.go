@@ -3,6 +3,7 @@ package handlers
 import (
 	"bytes"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -90,13 +91,16 @@ func performRequest(t *testing.T, method, path string, h func(deps *Deps) http.H
 	t.Helper()
 
 	testUser := models.User{ID: 1, Email: "test@mail.com", Password: "password", CreatedAt: time.Now()}
-	db := &TestDL{User: testUser}
+	db := &testDL{User: testUser}
 	validator, translator, err := validations.Init(db)
 	if err != nil {
 		t.Error(err)
 	}
 
-	deps := &Deps{DB: db, Validator: validator, Translator: translator, Logger: logwrapper.New()}
+	logger := logwrapper.New()
+	logger.SetOutput(ioutil.Discard)
+
+	deps := &Deps{DB: db, Validator: validator, Translator: translator, Logger: logger}
 
 	request, err := http.NewRequest(method, path, body)
 	if err != nil {
@@ -123,18 +127,18 @@ func validateStatusCode(t *testing.T, recorder *httptest.ResponseRecorder, expec
 	}
 }
 
-type TestDL struct {
+type testDL struct {
 	User models.User
 }
 
-func (t *TestDL) CreateUser(user *models.User) error {
+func (t *testDL) CreateUser(user *models.User) error {
 	user.ID = t.User.ID
 	user.CreatedAt = t.User.CreatedAt
 
 	return nil
 }
 
-func (t *TestDL) UserByEmail(email string) (*models.User, error) {
+func (t *testDL) UserByEmail(email string) (*models.User, error) {
 	var err error
 
 	t.User.Password, err = auth.EncryptPassword(t.User.Password)
@@ -145,20 +149,20 @@ func (t *TestDL) UserByEmail(email string) (*models.User, error) {
 	return &t.User, nil
 }
 
-func (t *TestDL) Close() {}
+func (t *testDL) Close() {}
 
-func (t *TestDL) UserExistsWithField(fl validator.FieldLevel) (bool, error) {
+func (t *testDL) UserExistsWithField(fl validator.FieldLevel) (bool, error) {
 	return false, nil
 }
 
-func (t *TestDL) StoreCache(key string, payload interface{}, exp time.Duration) error {
+func (t *testDL) StoreCache(key string, payload interface{}, exp time.Duration) error {
 	return nil
 }
 
-func (t *TestDL) DeleteCache(key string) (int64, error) {
+func (t *testDL) DeleteCache(key string) (int64, error) {
 	return 1, nil
 }
 
-func (t *TestDL) GetCacheValue(key string) (string, error) {
+func (t *testDL) GetCacheValue(key string) (string, error) {
 	return "", nil
 }
