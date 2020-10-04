@@ -59,7 +59,9 @@ func TestRefresh(t *testing.T) {
 	})
 
 	secret := []byte(os.Getenv("ACCESS_TOKEN_SECRET"))
+	claims := jwt.MapClaims{"exp": time.Now().Add(time.Minute * 15).Unix()}
 	expiredClaims := jwt.MapClaims{"exp": time.Now().Add(time.Minute * -15).Unix()}
+	token := generateFakeJWT(t, secret, jwt.SigningMethodHS256, claims)
 	expired := generateFakeJWT(t, secret, jwt.SigningMethodHS256, expiredClaims)
 
 	t.Run("returns Unauthorized with invalid 'Authorization' header", func(t *testing.T) {
@@ -68,6 +70,25 @@ func TestRefresh(t *testing.T) {
 		recorder := performRequest(t, "POST", "/refresh", Refresh, nil, h)
 
 		assertStatusCode(t, recorder, http.StatusUnauthorized)
+	})
+
+	t.Run("returns Unauthorized with valid Access token", func(t *testing.T) {
+		h := jsonHeaders
+		h[auhtorizationHeader] = token
+		recorder := performRequest(t, "POST", "/refresh", Refresh, nil, h)
+
+		assertStatusCode(t, recorder, http.StatusUnauthorized)
+	})
+
+	secret = []byte(os.Getenv("REFRESH_TOKEN_SECRET"))
+	token = generateFakeJWT(t, secret, jwt.SigningMethodHS256, claims)
+
+	t.Run("returns OK with valid Refresh token", func(t *testing.T) {
+		h := jsonHeaders
+		h[auhtorizationHeader] = token
+		recorder := performRequest(t, "POST", "/refresh", Refresh, nil, h)
+
+		assertStatusCode(t, recorder, http.StatusOK)
 	})
 }
 

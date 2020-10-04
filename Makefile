@@ -8,7 +8,7 @@ down:
 	docker-compose down
 
 test:
-	go test -v -cover ./...
+	ACCESS_TOKEN_SECRET=accessTokenSecret REFRESH_TOKEN_SECRET=refreshTokenSecret go test -v -cover ./...
 
 clean: down
 	rm -f hot_reload_exec
