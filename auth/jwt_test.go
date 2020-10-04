@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/maxshend/tiny_goauth/authtest"
 )
 
 func TestToken(t *testing.T) {
@@ -30,7 +31,7 @@ func TestValidateAccessToken(t *testing.T) {
 	expiredClaims := jwt.MapClaims{"exp": time.Now().Add(time.Minute * -15).Unix()}
 
 	t.Run("with valid token", func(t *testing.T) {
-		token := generateFakeJWT(t, secret, jwt.SigningMethodHS256, claims)
+		token := authtest.GenerateFakeJWT(t, secret, jwt.SigningMethodHS256, claims)
 
 		if _, err := ValidateAccessToken(token); err != nil {
 			t.Errorf("unexpected error: %q", err)
@@ -38,9 +39,9 @@ func TestValidateAccessToken(t *testing.T) {
 	})
 
 	t.Run("with invalid token", func(t *testing.T) {
-		expired := generateFakeJWT(t, secret, jwt.SigningMethodHS256, expiredClaims)
-		invalidSign := generateFakeJWT(t, []byte("invalid"), jwt.SigningMethodHS256, claims)
-		invalidAlg := generateFakeJWT(t, secret, jwt.SigningMethodHS512, claims)
+		expired := authtest.GenerateFakeJWT(t, secret, jwt.SigningMethodHS256, expiredClaims)
+		invalidSign := authtest.GenerateFakeJWT(t, []byte("invalid"), jwt.SigningMethodHS256, claims)
+		invalidAlg := authtest.GenerateFakeJWT(t, secret, jwt.SigningMethodHS512, claims)
 
 		tokenCases := []struct {
 			title string
@@ -67,16 +68,4 @@ func TestValidateAccessToken(t *testing.T) {
 			})
 		}
 	})
-}
-
-func generateFakeJWT(t *testing.T, sign []byte, method jwt.SigningMethod, claims jwt.Claims) string {
-	t.Helper()
-
-	jwtToken := jwt.NewWithClaims(method, claims)
-	token, err := jwtToken.SignedString(sign)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	return token
 }

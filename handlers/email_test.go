@@ -12,6 +12,7 @@ import (
 
 	"github.com/go-playground/validator"
 	"github.com/maxshend/tiny_goauth/auth"
+	"github.com/maxshend/tiny_goauth/authtest"
 	"github.com/maxshend/tiny_goauth/logwrapper"
 	"github.com/maxshend/tiny_goauth/models"
 	"github.com/maxshend/tiny_goauth/validations"
@@ -23,33 +24,33 @@ func TestEmailRegister(t *testing.T) {
 	t.Run("returns MethodNotAllowed for non-POST requests", func(t *testing.T) {
 		recorder := performRequest(t, "GET", "/email/register", EmailRegister, nil, jsonHeaders)
 
-		assertStatusCode(t, recorder, http.StatusMethodNotAllowed)
+		authtest.AssertStatusCode(t, recorder, http.StatusMethodNotAllowed)
 	})
 
 	t.Run("returns BadRequest without json 'Conten-Type' header", func(t *testing.T) {
 		recorder := performRequest(t, "POST", "/email/register", EmailRegister, nil, nil)
 
-		assertStatusCode(t, recorder, http.StatusBadRequest)
+		authtest.AssertStatusCode(t, recorder, http.StatusBadRequest)
 	})
 
 	t.Run("returns InternalServerError when body isn't valid json", func(t *testing.T) {
 		recorder := performRequest(t, "POST", "/email/register", EmailRegister, strings.NewReader("invalid"), jsonHeaders)
 
-		assertStatusCode(t, recorder, http.StatusInternalServerError)
+		authtest.AssertStatusCode(t, recorder, http.StatusInternalServerError)
 	})
 
 	t.Run("returns UnprocessableEntity with invalid user data", func(t *testing.T) {
 		body := bytes.NewBuffer([]byte(`{"email": "invalid.mail.com", "password": "foobar123"}`))
 		recorder := performRequest(t, "POST", "/email/register", EmailRegister, body, jsonHeaders)
 
-		assertStatusCode(t, recorder, http.StatusUnprocessableEntity)
+		authtest.AssertStatusCode(t, recorder, http.StatusUnprocessableEntity)
 	})
 
 	t.Run("returns OK with valid user data", func(t *testing.T) {
 		body := bytes.NewBuffer([]byte(`{"email": "valid@mail.com", "password": "12345678"}`))
 		recorder := performRequest(t, "POST", "/email/register", EmailRegister, body, jsonHeaders)
 
-		assertStatusCode(t, recorder, http.StatusOK)
+		authtest.AssertStatusCode(t, recorder, http.StatusOK)
 	})
 }
 
@@ -57,33 +58,33 @@ func TestEmailLogin(t *testing.T) {
 	t.Run("returns MethodNotAllowed for non-POST requests", func(t *testing.T) {
 		recorder := performRequest(t, "GET", "/email/login", EmailLogin, nil, jsonHeaders)
 
-		assertStatusCode(t, recorder, http.StatusMethodNotAllowed)
+		authtest.AssertStatusCode(t, recorder, http.StatusMethodNotAllowed)
 	})
 
 	t.Run("returns BadRequest without json 'Conten-Type' header", func(t *testing.T) {
 		recorder := performRequest(t, "POST", "/email/login", EmailLogin, nil, nil)
 
-		assertStatusCode(t, recorder, http.StatusBadRequest)
+		authtest.AssertStatusCode(t, recorder, http.StatusBadRequest)
 	})
 
 	t.Run("returns InternalServerError when body isn't valid json", func(t *testing.T) {
 		recorder := performRequest(t, "POST", "/email/login", EmailLogin, strings.NewReader("invalid"), jsonHeaders)
 
-		assertStatusCode(t, recorder, http.StatusInternalServerError)
+		authtest.AssertStatusCode(t, recorder, http.StatusInternalServerError)
 	})
 
 	t.Run("returns Unauthorized with invalid user creds", func(t *testing.T) {
 		body := bytes.NewBuffer([]byte(`{"email": "invalid.mail.com", "password": "foobar123"}`))
 		recorder := performRequest(t, "POST", "/email/login", EmailLogin, body, jsonHeaders)
 
-		assertStatusCode(t, recorder, http.StatusUnauthorized)
+		authtest.AssertStatusCode(t, recorder, http.StatusUnauthorized)
 	})
 
 	t.Run("returns OK with valid user creds", func(t *testing.T) {
 		body := bytes.NewBuffer([]byte(`{"email": "test@mail.com", "password": "password"}`))
 		recorder := performRequest(t, "POST", "/email/login", EmailLogin, body, jsonHeaders)
 
-		assertStatusCode(t, recorder, http.StatusOK)
+		authtest.AssertStatusCode(t, recorder, http.StatusOK)
 	})
 }
 
@@ -117,14 +118,6 @@ func performRequest(t *testing.T, method, path string, h func(deps *Deps) http.H
 	handler.ServeHTTP(recorder, request)
 
 	return recorder
-}
-
-func assertStatusCode(t *testing.T, recorder *httptest.ResponseRecorder, expected int) {
-	t.Helper()
-
-	if got := recorder.Code; got != expected {
-		t.Errorf("Returned wrong status code. Expected %d, got %d", expected, got)
-	}
 }
 
 type testDL struct {
