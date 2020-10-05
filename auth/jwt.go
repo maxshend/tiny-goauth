@@ -21,13 +21,14 @@ type TokenDetails struct {
 
 // Claims represents data from JWT body
 type Claims struct {
-	UserID int64  `json:"user_id"`
-	UUID   string `json:"uuid"`
+	UserID int64    `json:"user_id"`
+	Roles  []string `json:"roles"`
+	UUID   string   `json:"uuid"`
 	jwt.StandardClaims
 }
 
 // Token creates access and refresh tokens for a user with specified ID
-func Token(userID int64) (*TokenDetails, error) {
+func Token(userID int64, roles []string) (*TokenDetails, error) {
 	var err error
 	details := &TokenDetails{}
 
@@ -39,6 +40,7 @@ func Token(userID int64) (*TokenDetails, error) {
 
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, Claims{
 		userID,
+		roles,
 		details.AccessUUID,
 		jwt.StandardClaims{
 			ExpiresAt: details.AccessExpiresAt,
@@ -51,6 +53,7 @@ func Token(userID int64) (*TokenDetails, error) {
 
 	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, Claims{
 		userID,
+		roles,
 		details.RefreshUUID,
 		jwt.StandardClaims{
 			ExpiresAt: details.RefreshExpiresAt,

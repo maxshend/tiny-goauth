@@ -72,7 +72,7 @@ func Refresh(deps *Deps) http.Handler {
 			return
 		}
 
-		td, err := auth.Token(claims.UserID)
+		td, err := auth.Token(claims.UserID, claims.Roles)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			return

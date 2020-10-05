@@ -11,14 +11,14 @@ import (
 
 func TestToken(t *testing.T) {
 	t.Run("without errors", func(t *testing.T) {
-		_, err := Token(0)
+		_, err := Token(0, nil)
 		if err != nil {
 			t.Errorf("got %q error", err.Error())
 		}
 	})
 
 	t.Run("returns non empty tokens", func(t *testing.T) {
-		details, _ := Token(0)
+		details, _ := Token(0, nil)
 		if len(details.Access) == 0 || len(details.Refresh) == 0 {
 			t.Error("got empty tokens")
 		}
