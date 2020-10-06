@@ -13,7 +13,7 @@ import (
 func EmailRegister(deps *Deps) http.Handler {
 	return logHandler(deps, jsonHandler(postHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var user models.User
-		r.Body = http.MaxBytesReader(w, r.Body, 1048576)
+		r.Body = http.MaxBytesReader(w, r.Body, maxBodySize)
 
 		dec := json.NewDecoder(r.Body)
 		err := dec.Decode(&user)
@@ -68,7 +68,7 @@ func EmailRegister(deps *Deps) http.Handler {
 func EmailLogin(deps *Deps) http.Handler {
 	return logHandler(deps, jsonHandler(postHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var loginUser models.User
-		r.Body = http.MaxBytesReader(w, r.Body, 1048576)
+		r.Body = http.MaxBytesReader(w, r.Body, maxBodySize)
 
 		dec := json.NewDecoder(r.Body)
 		err := dec.Decode(&loginUser)

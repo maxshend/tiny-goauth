@@ -29,6 +29,7 @@ const successResponse = `{"success": true}`
 const (
 	tokenClaimsKey contextKey = iota
 )
+const maxBodySize = 1048576
 
 // Logout invalidates current JWT token
 func Logout(deps *Deps) http.Handler {
