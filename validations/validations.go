@@ -11,14 +11,13 @@ import (
 	"github.com/maxshend/tiny_goauth/db"
 )
 
-// ValidationErr represents errors related to validations
-type ValidationErr string
+type validationErr string
 
-func (e ValidationErr) Error() string { return string(e) }
+func (e validationErr) Error() string { return string(e) }
 
 var uni *ut.UniversalTranslator
 
-const errCannotLocateTranslator = ValidationErr("Translator cannot be located")
+const errCannotLocateTranslator = validationErr("Translator cannot be located")
 
 // Init creates new validator instance
 func Init(db db.DataLayer) (validate *validator.Validate, translator ut.Translator, err error) {

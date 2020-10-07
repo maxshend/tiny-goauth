@@ -59,8 +59,6 @@ func EmailRegister(deps *Deps) http.Handler {
 		}
 
 		respondSuccess(w, http.StatusOK, token)
-
-		return
 	}))))
 }
 
@@ -102,7 +100,5 @@ func EmailLogin(deps *Deps) http.Handler {
 		}
 
 		respondSuccess(w, http.StatusOK, token)
-
-		return
 	}))))
 }

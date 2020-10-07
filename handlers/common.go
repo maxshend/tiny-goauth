@@ -26,6 +26,7 @@ const contentTypeHeader = "Content-Type"
 const auhtorizationHeader = "Authorization"
 const jsonContentType = "application/json"
 const successResponse = `{"success": true}`
+const invalidTokenMsg = "Invalid Authorization token."
 const (
 	tokenClaimsKey contextKey = iota
 )
@@ -37,13 +38,18 @@ func Logout(deps *Deps) http.Handler {
 		c := r.Context().Value(tokenClaimsKey)
 		claims, ok := c.(*auth.Claims)
 		if !ok {
-			w.WriteHeader(http.StatusUnauthorized)
+			respondInvalidToken(w)
 			return
 		}
 
 		del, err := deps.DB.DeleteCache(claims.UUID)
-		if err != nil || del == 0 {
-			w.WriteHeader(http.StatusUnauthorized)
+		if del == 0 {
+			respondInvalidToken(w)
+			return
+		}
+		if err != nil {
+			deps.Logger.RequestError(r, err)
+			respondInternalError(w)
 			return
 		}
 
@@ -57,42 +63,54 @@ func Refresh(deps *Deps) http.Handler {
 		token := r.Header.Get("Authorization")
 		c, err := auth.ValidateRefreshToken(token)
 		if err != nil {
-			w.WriteHeader(http.StatusUnauthorized)
+			respondInvalidToken(w)
 			return
 		}
 
 		claims, ok := c.(*auth.Claims)
 		if !ok {
-			w.WriteHeader(http.StatusUnauthorized)
+			respondInvalidToken(w)
 			return
 		}
 
 		del, err := deps.DB.DeleteCache(claims.UUID)
-		if err != nil || del == 0 {
-			w.WriteHeader(http.StatusUnauthorized)
+		if del == 0 {
+			respondInvalidToken(w)
+			return
+		}
+		if err != nil {
+			deps.Logger.RequestError(r, err)
+			respondInternalError(w)
 			return
 		}
 
 		td, err := auth.Token(claims.UserID, claims.Roles)
 		if err != nil {
-			w.WriteHeader(http.StatusUnauthorized)
+			respondInvalidToken(w)
 			return
 		}
 
 		err = saveTokenDetails(deps, claims.UserID, td)
 		if err != nil {
-			w.WriteHeader(http.StatusUnauthorized)
+			respondInvalidToken(w)
 			return
 		}
 
-		respondSuccess(w, http.StatusOK, td)
+		payload, err := json.Marshal(td)
+		if err != nil {
+			deps.Logger.RequestError(r, err)
+			respondInternalError(w)
+			return
+		}
+
+		respondSuccess(w, http.StatusOK, payload)
 	}))))
 }
 
 func respondSuccess(w http.ResponseWriter, status int, payload interface{}) {
 	response, err := json.Marshal(payload)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		respondInternalError(w)
 		return
 	}
 
@@ -114,6 +132,14 @@ func respondModelError(deps *Deps, w http.ResponseWriter, err validator.Validati
 	}
 
 	respondError(w, http.StatusUnprocessableEntity, errResponse)
+}
+
+func respondInvalidToken(w http.ResponseWriter) {
+	respondError(w, http.StatusUnauthorized, invalidTokenMsg)
+}
+
+func respondInternalError(w http.ResponseWriter) {
+	w.WriteHeader(http.StatusInternalServerError)
 }
 
 func saveTokenDetails(deps *Deps, userID int64, td *auth.TokenDetails) error {
