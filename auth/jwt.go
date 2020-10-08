@@ -27,9 +27,23 @@ type Claims struct {
 	jwt.StandardClaims
 }
 
+type authErr string
+
+func (e authErr) Error() string { return string(e) }
+
+const (
+	errEmptySecret   = authErr("Token secret is empty")
+	errEmptyPassword = authErr("Password is empty")
+)
+
 // Token creates access and refresh tokens for a user with specified ID
 func Token(userID int64, roles []string) (*TokenDetails, error) {
 	var err error
+
+	if len(os.Getenv("ACCESS_TOKEN_SECRET")) == 0 || len(os.Getenv("REFRESH_TOKEN_SECRET")) == 0 {
+		return nil, errEmptySecret
+	}
+
 	details := &TokenDetails{}
 
 	details.AccessExpiresAt = time.Now().Add(time.Minute * 15).Unix()

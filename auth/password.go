@@ -4,6 +4,10 @@ import "golang.org/x/crypto/bcrypt"
 
 // EncryptPassword generates hash from a password string
 func EncryptPassword(password string) (string, error) {
+	if len(password) == 0 {
+		return "", errEmptyPassword
+	}
+
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 10)
 
 	return string(bytes), err

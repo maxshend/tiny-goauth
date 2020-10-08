@@ -19,21 +19,39 @@ func TestToken(t *testing.T) {
 
 	t.Run("returns non empty tokens", func(t *testing.T) {
 		details, _ := Token(0, nil)
-		if len(details.Access) == 0 || len(details.Refresh) == 0 {
+		if details == nil || len(details.Access) == 0 || len(details.Refresh) == 0 {
 			t.Error("got empty tokens")
+		}
+	})
+
+	t.Run("returns error when refresh token isn't set", func(t *testing.T) {
+		os.Unsetenv("ACCESS_TOKEN_SECRET")
+
+		_, err := Token(0, nil)
+		if err == nil {
+			t.Errorf("should got an error")
 		}
 	})
 }
 
 func TestValidateAccessToken(t *testing.T) {
-	secret := []byte(os.Getenv("ACCESS_TOKEN_SECRET"))
+	testToken(t, []byte(os.Getenv("ACCESS_TOKEN_SECRET")), ValidateAccessToken)
+}
+
+func TestValidateRefreshToken(t *testing.T) {
+	testToken(t, []byte(os.Getenv("REFRESH_TOKEN_SECRET")), ValidateRefreshToken)
+}
+
+func testToken(t *testing.T, secret []byte, fn func(tokenString string) (jwt.Claims, error)) {
+	t.Helper()
+
 	claims := jwt.MapClaims{"exp": time.Now().Add(time.Minute * 15).Unix()}
 	expiredClaims := jwt.MapClaims{"exp": time.Now().Add(time.Minute * -15).Unix()}
 
 	t.Run("with valid token", func(t *testing.T) {
 		token := authtest.GenerateFakeJWT(t, secret, jwt.SigningMethodHS256, claims)
 
-		if _, err := ValidateAccessToken(token); err != nil {
+		if _, err := fn(token); err != nil {
 			t.Errorf("unexpected error: %q", err)
 		}
 	})
@@ -56,7 +74,7 @@ func TestValidateAccessToken(t *testing.T) {
 
 		for _, tc := range tokenCases {
 			t.Run(tc.title, func(t *testing.T) {
-				_, err := ValidateAccessToken(tc.token)
+				_, err := fn(tc.token)
 
 				if err == nil {
 					t.Fatal("expected to be invalid")

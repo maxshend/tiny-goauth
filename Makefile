@@ -8,7 +8,10 @@ down:
 	docker-compose down
 
 test:
-	ACCESS_TOKEN_SECRET=accessTokenSecret REFRESH_TOKEN_SECRET=refreshTokenSecret go test -v -cover ./...
+	ACCESS_TOKEN_SECRET=accessTokenSecret REFRESH_TOKEN_SECRET=refreshTokenSecret go test -v -coverprofile=coverage.out ./...
+
+coverage:
+	go tool cover -html=coverage.out
 
 clean: down
 	rm -f hot_reload_exec
@@ -21,4 +24,4 @@ migrateup:
 migratedown:
 	docker-compose run --rm migrator "make down"
 
-.PHONY: up down test clean migrateup migratedown
+.PHONY: up down test clean migrateup migratedown coverage

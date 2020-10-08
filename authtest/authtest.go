@@ -28,3 +28,12 @@ func AssertStatusCode(t *testing.T, recorder *httptest.ResponseRecorder, expecte
 		t.Errorf("Returned wrong status code. Expected %d, got %d", expected, got)
 	}
 }
+
+// AssertError asserts error type
+func AssertError(t *testing.T, want, got error) {
+	t.Helper()
+
+	if want != got {
+		t.Errorf("expected %q got %q", want, got)
+	}
+}
