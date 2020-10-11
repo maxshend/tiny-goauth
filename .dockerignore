@@ -9,3 +9,5 @@ README.md
 .env*
 
 hot_reload_exec
+
+keys/

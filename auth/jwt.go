@@ -1,7 +1,9 @@
 package auth
 
 import (
+	"crypto/rsa"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"time"
 
@@ -27,6 +29,14 @@ type Claims struct {
 	jwt.StandardClaims
 }
 
+// RSAKeys contains private and public keys
+type RSAKeys struct {
+	AccessSign    *rsa.PrivateKey
+	AccessVerify  *rsa.PublicKey
+	RefreshSign   *rsa.PrivateKey
+	RefreshVerify *rsa.PublicKey
+}
+
 type authErr string
 
 func (e authErr) Error() string { return string(e) }
@@ -37,12 +47,8 @@ const (
 )
 
 // Token creates access and refresh tokens for a user with specified ID
-func Token(userID int64, roles []string) (*TokenDetails, error) {
+func Token(userID int64, roles []string, accessSign, refreshSign *rsa.PrivateKey) (*TokenDetails, error) {
 	var err error
-
-	if len(os.Getenv("ACCESS_TOKEN_SECRET")) == 0 || len(os.Getenv("REFRESH_TOKEN_SECRET")) == 0 {
-		return nil, errEmptySecret
-	}
 
 	details := &TokenDetails{}
 
@@ -52,7 +58,7 @@ func Token(userID int64, roles []string) (*TokenDetails, error) {
 	details.AccessUUID = uuid.New().String()
 	details.RefreshUUID = uuid.New().String()
 
-	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, Claims{
+	accessToken := jwt.NewWithClaims(jwt.SigningMethodRS256, Claims{
 		userID,
 		roles,
 		details.AccessUUID,
@@ -60,12 +66,12 @@ func Token(userID int64, roles []string) (*TokenDetails, error) {
 			ExpiresAt: details.AccessExpiresAt,
 		},
 	})
-	details.Access, err = accessToken.SignedString([]byte(os.Getenv("ACCESS_TOKEN_SECRET")))
+	details.Access, err = accessToken.SignedString(accessSign)
 	if err != nil {
 		return nil, err
 	}
 
-	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, Claims{
+	refreshToken := jwt.NewWithClaims(jwt.SigningMethodRS256, Claims{
 		userID,
 		roles,
 		details.RefreshUUID,
@@ -73,7 +79,7 @@ func Token(userID int64, roles []string) (*TokenDetails, error) {
 			ExpiresAt: details.RefreshExpiresAt,
 		},
 	})
-	details.Refresh, err = refreshToken.SignedString([]byte(os.Getenv("REFRESH_TOKEN_SECRET")))
+	details.Refresh, err = refreshToken.SignedString(refreshSign)
 	if err != nil {
 		return nil, err
 	}
@@ -81,24 +87,15 @@ func Token(userID int64, roles []string) (*TokenDetails, error) {
 	return details, nil
 }
 
-// ValidateAccessToken validates access token
-func ValidateAccessToken(tokenString string) (jwt.Claims, error) {
-	return validateToken(tokenString, os.Getenv("ACCESS_TOKEN_SECRET"))
-}
-
-// ValidateRefreshToken validates refresh token
-func ValidateRefreshToken(tokenString string) (jwt.Claims, error) {
-	return validateToken(tokenString, os.Getenv("REFRESH_TOKEN_SECRET"))
-}
-
-func validateToken(tokenString, secret string) (jwt.Claims, error) {
+// ValidateToken validates access and refresh tokens
+func ValidateToken(tokenString string, secret *rsa.PublicKey) (jwt.Claims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
-		hmac, ok := token.Method.(*jwt.SigningMethodHMAC)
-		if !ok || hmac.Alg() != "HS256" {
+		hmac, ok := token.Method.(*jwt.SigningMethodRSA)
+		if !ok || hmac.Alg() != "RS256" {
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 		}
 
-		return []byte(secret), nil
+		return secret, nil
 	})
 	if err != nil {
 		return nil, err
@@ -110,4 +107,52 @@ func validateToken(tokenString, secret string) (jwt.Claims, error) {
 	}
 
 	return claims, nil
+}
+
+// Keys generates access and refresh RSA keys
+func Keys() (*RSAKeys, error) {
+	var err error
+	keys := &RSAKeys{}
+
+	bytes, err := ioutil.ReadFile(os.Getenv("ACCESS_PRIVATE_PATH"))
+	if err != nil {
+		return nil, err
+	}
+
+	keys.AccessSign, err = jwt.ParseRSAPrivateKeyFromPEM(bytes)
+	if err != nil {
+		return nil, err
+	}
+
+	bytes, err = ioutil.ReadFile(os.Getenv("ACCESS_PUBLIC_PATH"))
+	if err != nil {
+		return nil, err
+	}
+
+	keys.AccessVerify, err = jwt.ParseRSAPublicKeyFromPEM(bytes)
+	if err != nil {
+		return nil, err
+	}
+
+	bytes, err = ioutil.ReadFile(os.Getenv("REFRESH_PRIVATE_PATH"))
+	if err != nil {
+		return nil, err
+	}
+
+	keys.RefreshSign, err = jwt.ParseRSAPrivateKeyFromPEM(bytes)
+	if err != nil {
+		return nil, err
+	}
+
+	bytes, err = ioutil.ReadFile(os.Getenv("REFRESH_PUBLIC_PATH"))
+	if err != nil {
+		return nil, err
+	}
+
+	keys.RefreshVerify, err = jwt.ParseRSAPublicKeyFromPEM(bytes)
+	if err != nil {
+		return nil, err
+	}
+
+	return keys, nil
 }

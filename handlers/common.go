@@ -18,6 +18,7 @@ type Deps struct {
 	Validator  *validator.Validate
 	Translator ut.Translator
 	Logger     *logwrapper.StandardLogger
+	Keys       *auth.RSAKeys
 }
 
 type contextKey int
@@ -34,7 +35,7 @@ const maxBodySize = 1048576
 
 // Logout invalidates current JWT token
 func Logout(deps *Deps) http.Handler {
-	return logHandler(deps, jsonHandler(deleteHandler(authenticatedHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return logHandler(deps, jsonHandler(deleteHandler(authenticatedHandler(deps, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		c := r.Context().Value(tokenClaimsKey)
 		claims, ok := c.(*auth.Claims)
 		if !ok {
@@ -61,7 +62,7 @@ func Logout(deps *Deps) http.Handler {
 func Refresh(deps *Deps) http.Handler {
 	return logHandler(deps, jsonHandler(postHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		token := r.Header.Get("Authorization")
-		c, err := auth.ValidateRefreshToken(token)
+		c, err := auth.ValidateToken(token, deps.Keys.RefreshVerify)
 		if err != nil {
 			respondInvalidToken(w)
 			return
@@ -84,7 +85,7 @@ func Refresh(deps *Deps) http.Handler {
 			return
 		}
 
-		td, err := auth.Token(claims.UserID, claims.Roles)
+		td, err := auth.Token(claims.UserID, claims.Roles, deps.Keys.AccessSign, deps.Keys.RefreshSign)
 		if err != nil {
 			respondInvalidToken(w)
 			return

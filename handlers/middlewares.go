@@ -8,11 +8,11 @@ import (
 	"github.com/maxshend/tiny_goauth/auth"
 )
 
-func authenticatedHandler(next http.Handler) http.Handler {
+func authenticatedHandler(deps *Deps, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		token := r.Header.Get(auhtorizationHeader)
 
-		claims, err := auth.ValidateAccessToken(token)
+		claims, err := auth.ValidateToken(token, deps.Keys.AccessVerify)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			return

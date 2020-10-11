@@ -5,6 +5,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/maxshend/tiny_goauth/auth"
 	"github.com/maxshend/tiny_goauth/db"
 	"github.com/maxshend/tiny_goauth/handlers"
 	"github.com/maxshend/tiny_goauth/logwrapper"
@@ -25,7 +26,18 @@ func main() {
 		logger.FatalError(err)
 	}
 
-	deps := &handlers.Deps{DB: db, Validator: validator, Translator: translator, Logger: logger}
+	keys, err := auth.Keys()
+	if err != nil {
+		logger.FatalError(err)
+	}
+
+	deps := &handlers.Deps{
+		DB:         db,
+		Validator:  validator,
+		Translator: translator,
+		Logger:     logger,
+		Keys:       keys,
+	}
 	server := http.Server{
 		Addr:         ":" + os.Getenv("APP_PORT"),
 		Handler:      nil,
