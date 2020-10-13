@@ -8,7 +8,7 @@ down:
 	docker-compose down
 
 test:
-	ACCESS_TOKEN_SECRET=accessTokenSecret REFRESH_TOKEN_SECRET=refreshTokenSecret go test -v -coverprofile=coverage.out ./...
+	go test -v -coverprofile=coverage.out ./...
 
 coverage:
 	go tool cover -html=coverage.out

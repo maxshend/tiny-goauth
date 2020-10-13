@@ -47,7 +47,7 @@ const (
 )
 
 // Token creates access and refresh tokens for a user with specified ID
-func Token(userID int64, roles []string, accessSign, refreshSign *rsa.PrivateKey) (*TokenDetails, error) {
+func Token(userID int64, roles []string, keys *RSAKeys) (*TokenDetails, error) {
 	var err error
 
 	details := &TokenDetails{}
@@ -66,7 +66,7 @@ func Token(userID int64, roles []string, accessSign, refreshSign *rsa.PrivateKey
 			ExpiresAt: details.AccessExpiresAt,
 		},
 	})
-	details.Access, err = accessToken.SignedString(accessSign)
+	details.Access, err = accessToken.SignedString(keys.AccessSign)
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +79,7 @@ func Token(userID int64, roles []string, accessSign, refreshSign *rsa.PrivateKey
 			ExpiresAt: details.RefreshExpiresAt,
 		},
 	})
-	details.Refresh, err = refreshToken.SignedString(refreshSign)
+	details.Refresh, err = refreshToken.SignedString(keys.RefreshSign)
 	if err != nil {
 		return nil, err
 	}
@@ -90,8 +90,8 @@ func Token(userID int64, roles []string, accessSign, refreshSign *rsa.PrivateKey
 // ValidateToken validates access and refresh tokens
 func ValidateToken(tokenString string, secret *rsa.PublicKey) (jwt.Claims, error) {
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
-		hmac, ok := token.Method.(*jwt.SigningMethodRSA)
-		if !ok || hmac.Alg() != "RS256" {
+		m, ok := token.Method.(*jwt.SigningMethodRSA)
+		if !ok || m.Alg() != "RS256" {
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 		}
 
