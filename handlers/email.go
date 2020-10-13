@@ -45,7 +45,7 @@ func EmailRegister(deps *Deps) http.Handler {
 			return
 		}
 
-		token, err := auth.Token(user.ID, user.Roles, deps.Keys.AccessSign, deps.Keys.RefreshSign)
+		token, err := auth.Token(user.ID, user.Roles, deps.Keys)
 		if err != nil {
 			deps.Logger.RequestError(r, err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -87,7 +87,7 @@ func EmailLogin(deps *Deps) http.Handler {
 			return
 		}
 
-		token, err := auth.Token(user.ID, user.Roles, deps.Keys.AccessSign, deps.Keys.RefreshSign)
+		token, err := auth.Token(user.ID, user.Roles, deps.Keys)
 		if err != nil {
 			respondError(w, http.StatusUnauthorized, err.Error())
 			return

@@ -85,7 +85,7 @@ func Refresh(deps *Deps) http.Handler {
 			return
 		}
 
-		td, err := auth.Token(claims.UserID, claims.Roles, deps.Keys.AccessSign, deps.Keys.RefreshSign)
+		td, err := auth.Token(claims.UserID, claims.Roles, deps.Keys)
 		if err != nil {
 			respondInvalidToken(w)
 			return

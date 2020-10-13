@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"bytes"
+	"crypto/rsa"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -22,33 +23,33 @@ var jsonHeaders = map[string]string{contentTypeHeader: jsonContentType}
 
 func TestEmailRegister(t *testing.T) {
 	t.Run("returns MethodNotAllowed for non-POST requests", func(t *testing.T) {
-		recorder := performRequest(t, "GET", "/email/register", EmailRegister, nil, jsonHeaders)
+		recorder := performRequest(t, "GET", "/email/register", EmailRegister, nil, jsonHeaders, nil)
 
 		authtest.AssertStatusCode(t, recorder, http.StatusMethodNotAllowed)
 	})
 
 	t.Run("returns BadRequest without json 'Conten-Type' header", func(t *testing.T) {
-		recorder := performRequest(t, "POST", "/email/register", EmailRegister, nil, nil)
+		recorder := performRequest(t, "POST", "/email/register", EmailRegister, nil, nil, nil)
 
 		authtest.AssertStatusCode(t, recorder, http.StatusBadRequest)
 	})
 
 	t.Run("returns InternalServerError when body isn't valid json", func(t *testing.T) {
-		recorder := performRequest(t, "POST", "/email/register", EmailRegister, strings.NewReader("invalid"), jsonHeaders)
+		recorder := performRequest(t, "POST", "/email/register", EmailRegister, strings.NewReader("invalid"), jsonHeaders, nil)
 
 		authtest.AssertStatusCode(t, recorder, http.StatusInternalServerError)
 	})
 
 	t.Run("returns UnprocessableEntity with invalid user data", func(t *testing.T) {
 		body := bytes.NewBuffer([]byte(`{"email": "invalid.mail.com", "password": "foobar123"}`))
-		recorder := performRequest(t, "POST", "/email/register", EmailRegister, body, jsonHeaders)
+		recorder := performRequest(t, "POST", "/email/register", EmailRegister, body, jsonHeaders, nil)
 
 		authtest.AssertStatusCode(t, recorder, http.StatusUnprocessableEntity)
 	})
 
 	t.Run("returns OK with valid user data", func(t *testing.T) {
 		body := bytes.NewBuffer([]byte(`{"email": "valid@mail.com", "password": "12345678"}`))
-		recorder := performRequest(t, "POST", "/email/register", EmailRegister, body, jsonHeaders)
+		recorder := performRequest(t, "POST", "/email/register", EmailRegister, body, jsonHeaders, nil)
 
 		authtest.AssertStatusCode(t, recorder, http.StatusOK)
 	})
@@ -56,39 +57,39 @@ func TestEmailRegister(t *testing.T) {
 
 func TestEmailLogin(t *testing.T) {
 	t.Run("returns MethodNotAllowed for non-POST requests", func(t *testing.T) {
-		recorder := performRequest(t, "GET", "/email/login", EmailLogin, nil, jsonHeaders)
+		recorder := performRequest(t, "GET", "/email/login", EmailLogin, nil, jsonHeaders, nil)
 
 		authtest.AssertStatusCode(t, recorder, http.StatusMethodNotAllowed)
 	})
 
 	t.Run("returns BadRequest without json 'Conten-Type' header", func(t *testing.T) {
-		recorder := performRequest(t, "POST", "/email/login", EmailLogin, nil, nil)
+		recorder := performRequest(t, "POST", "/email/login", EmailLogin, nil, nil, nil)
 
 		authtest.AssertStatusCode(t, recorder, http.StatusBadRequest)
 	})
 
 	t.Run("returns InternalServerError when body isn't valid json", func(t *testing.T) {
-		recorder := performRequest(t, "POST", "/email/login", EmailLogin, strings.NewReader("invalid"), jsonHeaders)
+		recorder := performRequest(t, "POST", "/email/login", EmailLogin, strings.NewReader("invalid"), jsonHeaders, nil)
 
 		authtest.AssertStatusCode(t, recorder, http.StatusInternalServerError)
 	})
 
 	t.Run("returns Unauthorized with invalid user creds", func(t *testing.T) {
 		body := bytes.NewBuffer([]byte(`{"email": "invalid.mail.com", "password": "foobar123"}`))
-		recorder := performRequest(t, "POST", "/email/login", EmailLogin, body, jsonHeaders)
+		recorder := performRequest(t, "POST", "/email/login", EmailLogin, body, jsonHeaders, nil)
 
 		authtest.AssertStatusCode(t, recorder, http.StatusUnauthorized)
 	})
 
 	t.Run("returns OK with valid user creds", func(t *testing.T) {
 		body := bytes.NewBuffer([]byte(`{"email": "test@mail.com", "password": "password"}`))
-		recorder := performRequest(t, "POST", "/email/login", EmailLogin, body, jsonHeaders)
+		recorder := performRequest(t, "POST", "/email/login", EmailLogin, body, jsonHeaders, nil)
 
 		authtest.AssertStatusCode(t, recorder, http.StatusOK)
 	})
 }
 
-func performRequest(t *testing.T, method, path string, h func(deps *Deps) http.Handler, body io.Reader, headers map[string]string) (recorder *httptest.ResponseRecorder) {
+func performRequest(t *testing.T, method, path string, h func(deps *Deps) http.Handler, body io.Reader, headers map[string]string, key *rsa.PrivateKey) (recorder *httptest.ResponseRecorder) {
 	t.Helper()
 
 	testUser := models.User{ID: 1, Email: "test@mail.com", Password: "password", CreatedAt: time.Now()}
@@ -101,7 +102,15 @@ func performRequest(t *testing.T, method, path string, h func(deps *Deps) http.H
 	logger := logwrapper.New()
 	logger.SetOutput(ioutil.Discard)
 
-	deps := &Deps{DB: db, Validator: validator, Translator: translator, Logger: logger}
+	if key == nil {
+		key, err = authtest.GeneratePrivateKey()
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+	keys := &auth.RSAKeys{AccessSign: key, AccessVerify: &key.PublicKey, RefreshSign: key, RefreshVerify: &key.PublicKey}
+
+	deps := &Deps{DB: db, Validator: validator, Translator: translator, Logger: logger, Keys: keys}
 
 	request, err := http.NewRequest(method, path, body)
 	if err != nil {
