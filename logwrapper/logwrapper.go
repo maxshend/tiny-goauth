@@ -32,7 +32,7 @@ var fatalError = Event{2, "Application stopped: %s"}
 
 // RequestDetails logs an HTTP request details
 func (l *StandardLogger) RequestDetails(r *http.Request, code int) {
-	l.Errorf(requestDetails.message, code, r.Method, r.RequestURI, r.UserAgent(), r.RemoteAddr)
+	l.Printf(requestDetails.message, code, r.Method, r.RequestURI, r.UserAgent(), r.RemoteAddr)
 }
 
 // RequestError logs errors that come up while request handling

@@ -19,6 +19,9 @@ services:
       
       ACCESS_PUBLIC_PATH: $ACCESS_PUBLIC_PATH
       REFRESH_PUBLIC_PATH: $REFRESH_PUBLIC_PATH
+
+      API_HOST: $API_HOST
+      API_USERS_ENDPOINT: $API_USERS_ENDPOINT
     volumes:
       - ./:/app
     depends_on:

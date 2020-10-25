@@ -140,6 +140,10 @@ func (t *testDL) CreateUser(user *models.User) error {
 	return nil
 }
 
+func (t *testDL) DeleteUser(id int64) error {
+	return nil
+}
+
 func (t *testDL) UserByEmail(email string) (*models.User, error) {
 	var err error
 

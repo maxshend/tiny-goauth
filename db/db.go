@@ -21,6 +21,7 @@ type DataLayer interface {
 	StoreCache(key string, payload interface{}, exp time.Duration) error
 	DeleteCache(key string) (int64, error)
 	GetCacheValue(key string) (string, error)
+	DeleteUser(id int64) error
 	Close()
 }
 
@@ -28,6 +29,12 @@ type datastore struct {
 	db  *pgxpool.Pool
 	rdb *redis.Client
 }
+
+type dbErr string
+
+func (e dbErr) Error() string { return string(e) }
+
+const zeroDeleteRows = dbErr("No row found to delete")
 
 // Init initializes connection to the database
 func Init() (DataLayer, error) {

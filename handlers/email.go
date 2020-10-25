@@ -45,6 +45,19 @@ func EmailRegister(deps *Deps) http.Handler {
 			return
 		}
 
+		err = createExternalUser(&user)
+		if err != nil {
+			deps.Logger.RequestError(r, err)
+
+			err = deps.DB.DeleteUser(user.ID)
+			if err != nil {
+				deps.Logger.RequestError(r, err)
+			}
+
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
 		token, err := auth.Token(user.ID, user.Roles, deps.Keys)
 		if err != nil {
 			deps.Logger.RequestError(r, err)

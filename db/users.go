@@ -48,3 +48,16 @@ func (s *datastore) UserByEmail(email string) (*models.User, error) {
 
 	return &user, nil
 }
+
+func (s *datastore) DeleteUser(id int64) error {
+	commandTag, err := s.db.Exec(ctx, "DELETE FROM users WHERE id = $1", id)
+	if err != nil {
+		return err
+	}
+
+	if commandTag.RowsAffected() != 1 {
+		return zeroDeleteRows
+	}
+
+	return nil
+}

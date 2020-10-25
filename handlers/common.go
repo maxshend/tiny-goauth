@@ -1,8 +1,12 @@
 package handlers
 
 import (
+	"bytes"
 	"encoding/json"
+	"io"
+	"io/ioutil"
 	"net/http"
+	"os"
 	"time"
 
 	ut "github.com/go-playground/universal-translator"
@@ -10,6 +14,7 @@ import (
 	"github.com/maxshend/tiny_goauth/auth"
 	"github.com/maxshend/tiny_goauth/db"
 	"github.com/maxshend/tiny_goauth/logwrapper"
+	"github.com/maxshend/tiny_goauth/models"
 )
 
 // Deps contains dependencies of the http handlers
@@ -28,10 +33,18 @@ const auhtorizationHeader = "Authorization"
 const jsonContentType = "application/json"
 const successResponse = `{"success": true}`
 const invalidTokenMsg = "Invalid Authorization token."
+const postMethod = "POST"
 const (
 	tokenClaimsKey contextKey = iota
 )
 const maxBodySize = 1048576
+const defaultUsersEndpoint = "/internal/tiny_goauth/users"
+
+type handlerErr string
+
+func (e handlerErr) Error() string { return string(e) }
+
+const failExternalResponse = handlerErr("External service returned invalid response")
 
 // Logout invalidates current JWT token
 func Logout(deps *Deps) http.Handler {
@@ -159,4 +172,47 @@ func saveTokenDetails(deps *Deps, userID int64, td *auth.TokenDetails) error {
 	}
 
 	return nil
+}
+
+func postJSON(url string, body io.Reader) (result io.Reader, code int, err error) {
+	code = http.StatusServiceUnavailable
+
+	req, err := http.NewRequest(postMethod, url, body)
+	if err != nil {
+		return nil, code, err
+	}
+
+	req.Header.Set(contentTypeHeader, jsonContentType)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, code, err
+	}
+	defer resp.Body.Close()
+
+	code = resp.StatusCode
+	respBody, _ := ioutil.ReadAll(resp.Body)
+
+	return bytes.NewReader(respBody), code, nil
+}
+
+func createExternalUser(user *models.User) error {
+	endpoint, found := os.LookupEnv("API_USERS_ENDPOINT")
+	if !found || len(endpoint) == 0 {
+		endpoint = defaultUsersEndpoint
+	}
+
+	body, err := json.Marshal(user)
+	if err != nil {
+		return err
+	}
+
+	_, code, err := postJSON(os.Getenv("API_HOST")+endpoint, bytes.NewReader(body))
+
+	if code != http.StatusOK {
+		return failExternalResponse
+	}
+
+	return err
 }
