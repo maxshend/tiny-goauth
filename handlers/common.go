@@ -203,7 +203,14 @@ func createExternalUser(user *models.User) error {
 		endpoint = defaultUsersEndpoint
 	}
 
-	body, err := json.Marshal(user)
+	userParams := &models.User{
+		ID:        user.ID,
+		Email:     user.Email,
+		Payload:   user.Payload,
+		CreatedAt: user.CreatedAt,
+	}
+
+	body, err := json.Marshal(userParams)
 	if err != nil {
 		return err
 	}
