@@ -38,7 +38,7 @@ const (
 	tokenClaimsKey contextKey = iota
 )
 const maxBodySize = 1048576
-const defaultUsersEndpoint = "/internal/tiny_goauth/users"
+const defaultUsersEndpoint = "/internal/tiny_goauth/registrations"
 
 type handlerErr string
 

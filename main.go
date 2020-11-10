@@ -41,8 +41,8 @@ func main() {
 	server := http.Server{
 		Addr:         ":" + os.Getenv("APP_PORT"),
 		Handler:      nil,
-		ReadTimeout:  1 * time.Second,
-		WriteTimeout: 1 * time.Second,
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 5 * time.Second,
 	}
 
 	http.Handle("/email/register", handlers.EmailRegister(deps))
