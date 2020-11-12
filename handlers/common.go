@@ -67,7 +67,7 @@ func Logout(deps *Deps) http.Handler {
 			return
 		}
 
-		respondSuccess(w, http.StatusOK, nil)
+		respond(w, http.StatusOK, nil)
 	})))))
 }
 
@@ -117,11 +117,11 @@ func Refresh(deps *Deps) http.Handler {
 			return
 		}
 
-		respondSuccess(w, http.StatusOK, payload)
+		respond(w, http.StatusOK, payload)
 	}))))
 }
 
-func respondSuccess(w http.ResponseWriter, status int, payload interface{}) {
+func respond(w http.ResponseWriter, status int, payload interface{}) {
 	response, err := json.Marshal(payload)
 	if err != nil {
 		respondInternalError(w)
@@ -136,7 +136,7 @@ func respondSuccess(w http.ResponseWriter, status int, payload interface{}) {
 }
 
 func respondError(w http.ResponseWriter, code int, message interface{}) {
-	respondSuccess(w, code, map[string]interface{}{"errors": message})
+	respond(w, code, map[string]interface{}{"errors": message})
 }
 
 func respondModelError(deps *Deps, w http.ResponseWriter, err validator.ValidationErrors) {

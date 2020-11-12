@@ -71,7 +71,7 @@ func EmailRegister(deps *Deps) http.Handler {
 			return
 		}
 
-		respondSuccess(w, http.StatusOK, token)
+		respond(w, http.StatusOK, token)
 	}))))
 }
 
@@ -91,6 +91,7 @@ func EmailLogin(deps *Deps) http.Handler {
 
 		user, err := deps.DB.UserByEmail(loginUser.Email)
 		if err != nil {
+			deps.Logger.RequestError(r, err)
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -112,6 +113,6 @@ func EmailLogin(deps *Deps) http.Handler {
 			return
 		}
 
-		respondSuccess(w, http.StatusOK, token)
+		respond(w, http.StatusOK, token)
 	}))))
 }

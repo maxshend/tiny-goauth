@@ -10,6 +10,6 @@ type User struct {
 	Email     string                 `db:"email" json:"email" validate:"required,email,unique_user"`
 	Password  string                 `db:"password" json:"password,omitempty" validate:"required,password"`
 	Payload   map[string]interface{} `json:"payload"`
-	Roles     []string               `json:"-"`
+	Roles     []string               `db:"roles" json:"-"`
 	CreatedAt time.Time              `db:"created_at" json:"created_at"`
 }

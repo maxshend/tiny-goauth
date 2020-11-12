@@ -36,7 +36,7 @@ func (s *datastore) UserByEmail(email string) (*models.User, error) {
 	var user models.User
 	err := s.db.QueryRow(
 		ctx,
-		"SELECT users.id AS id, email, password, created_at, ARRAY_AGG(roles.name) AS roles FROM users "+
+		"SELECT users.id AS id, email, password, created_at, ARRAY_REMOVE(ARRAY_AGG(roles.name), NULL) AS roles FROM users "+
 			"LEFT JOIN user_roles ON users.id = user_roles.user_id "+
 			"LEFT JOIN roles ON user_roles.role_id = roles.id WHERE email = $1 GROUP BY users.id "+
 			"LIMIT 1",
