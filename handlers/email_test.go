@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -49,6 +50,12 @@ func TestEmailRegister(t *testing.T) {
 
 	t.Run("returns OK with valid user data", func(t *testing.T) {
 		body := bytes.NewBuffer([]byte(`{"email": "valid@mail.com", "password": "12345678"}`))
+
+		externalApp := testServer()
+		defer externalApp.Close()
+
+		os.Setenv("API_HOST", externalApp.URL)
+
 		recorder := performRequest(t, "POST", "/email/register", EmailRegister, body, jsonHeaders, nil)
 
 		authtest.AssertStatusCode(t, recorder, http.StatusOK)
