@@ -163,6 +163,9 @@ func (t *testDL) UserByEmail(email string) (*models.User, error) {
 }
 
 func (t *testDL) Close() {}
+func (t *testDL) Migrate() error {
+	return nil
+}
 
 func (t *testDL) UserExistsWithField(fl validator.FieldLevel) (bool, error) {
 	return false, nil

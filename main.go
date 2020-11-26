@@ -15,13 +15,20 @@ import (
 func main() {
 	logger := logwrapper.New()
 
-	db, err := db.Init()
+	dbInst, err := db.Init()
 	if err != nil {
 		logger.FatalError(err)
 	}
-	defer db.Close()
+	defer dbInst.Close()
 
-	validator, translator, err := validations.Init(db)
+	migrateDB, present := os.LookupEnv("MIGRATE_DB")
+	if present && migrateDB == "true" {
+		if err = dbInst.Migrate(); err != nil {
+			logger.FatalError(err)
+		}
+	}
+
+	validator, translator, err := validations.Init(dbInst)
 	if err != nil {
 		logger.FatalError(err)
 	}
@@ -32,7 +39,7 @@ func main() {
 	}
 
 	deps := &handlers.Deps{
-		DB:         db,
+		DB:         dbInst,
 		Validator:  validator,
 		Translator: translator,
 		Logger:     logger,

@@ -2,7 +2,11 @@ package db
 
 import (
 	"context"
+	"io/ioutil"
 	"os"
+	"path/filepath"
+	"sort"
+	"strings"
 	"time"
 
 	"github.com/go-playground/validator"
@@ -23,6 +27,7 @@ type DataLayer interface {
 	GetCacheValue(key string) (string, error)
 	DeleteUser(id int64) error
 	Close()
+	Migrate() error
 }
 
 type datastore struct {
@@ -61,4 +66,30 @@ func Init() (DataLayer, error) {
 func (s *datastore) Close() {
 	s.db.Close()
 	defer s.rdb.Close()
+}
+
+// Migrate runs database migrations
+func (s *datastore) Migrate() error {
+	files, err := filepath.Glob("migrations/*.up.sql")
+	if err != nil {
+		return nil
+	}
+	sort.Strings(files)
+	var sqlScript strings.Builder
+
+	for _, file := range files {
+		c, err := ioutil.ReadFile(file)
+		if err != nil {
+			return err
+		}
+
+		sqlScript.WriteString(string(c))
+	}
+
+	_, err = s.db.Exec(ctx, sqlScript.String())
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

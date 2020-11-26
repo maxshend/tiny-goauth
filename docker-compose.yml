@@ -9,6 +9,7 @@ services:
     ports: ['8080:8080']
     environment:
       DB_URL: $DB_URL
+      MIGRATE_DB: $MIGRATE_DB
       REDIS_URL: $REDIS_URL
 
       APP_HOST: $APP_HOST
