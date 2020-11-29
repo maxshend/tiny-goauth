@@ -45,13 +45,18 @@ func EmailRegister(deps *Deps) http.Handler {
 			return
 		}
 
-		err = createExternalUser(&user)
+		responseBody, err := createExternalUser(&user)
 		if err != nil {
 			deps.Logger.RequestError(r, err)
 
 			err = deps.DB.DeleteUser(user.ID)
 			if err != nil {
 				deps.Logger.RequestError(r, err)
+			}
+
+			if responseBody != nil {
+				respondExternal(w, http.StatusUnprocessableEntity, responseBody)
+				return
 			}
 
 			w.WriteHeader(http.StatusInternalServerError)

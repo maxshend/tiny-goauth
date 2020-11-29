@@ -136,6 +136,12 @@ func respond(w http.ResponseWriter, status int, payload interface{}) {
 	}
 }
 
+func respondExternal(w http.ResponseWriter, status int, response []byte) {
+	w.Header().Set(contentTypeHeader, jsonContentType)
+	w.WriteHeader(status)
+	w.Write(response)
+}
+
 func respondError(w http.ResponseWriter, code int, message interface{}) {
 	respond(w, code, map[string]interface{}{"errors": message})
 }
@@ -198,7 +204,7 @@ func postJSON(url string, body io.Reader) (result io.Reader, code int, err error
 	return bytes.NewReader(respBody), code, nil
 }
 
-func createExternalUser(user *models.User) error {
+func createExternalUser(user *models.User) ([]byte, error) {
 	endpoint, found := os.LookupEnv("API_USERS_ENDPOINT")
 	if !found || len(endpoint) == 0 {
 		endpoint = defaultUsersEndpoint
@@ -213,16 +219,23 @@ func createExternalUser(user *models.User) error {
 
 	body, err := json.Marshal(userParams)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	_, code, err := postJSON(os.Getenv("API_HOST")+endpoint, bytes.NewReader(body))
-
-	if code != http.StatusOK {
-		return failExternalResponse
+	response, code, err := postJSON(os.Getenv("API_HOST")+endpoint, bytes.NewReader(body))
+	responseBody, err := ioutil.ReadAll(response)
+	if err != nil {
+		return nil, err
 	}
 
-	return err
+	switch code {
+	case http.StatusUnprocessableEntity:
+		return responseBody, failExternalResponse
+	case http.StatusOK:
+		return responseBody, nil
+	}
+
+	return nil, failExternalResponse
 }
 
 func testServer() *httptest.Server {
