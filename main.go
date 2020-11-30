@@ -56,6 +56,7 @@ func main() {
 	http.Handle("/email/login", handlers.EmailLogin(deps))
 	http.Handle("/logout", handlers.Logout(deps))
 	http.Handle("/refresh", handlers.Refresh(deps))
+	http.Handle("/internal/users/delete", handlers.DeleteUser(deps))
 
 	logger.FatalError(server.ListenAndServe())
 }
