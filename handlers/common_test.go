@@ -16,7 +16,7 @@ func TestLogout(t *testing.T) {
 		authtest.AssertStatusCode(t, recorder, http.StatusMethodNotAllowed)
 	})
 
-	t.Run("returns BadRequest without json 'Conten-Type' header", func(t *testing.T) {
+	t.Run("returns BadRequest without json 'Content-Type' header", func(t *testing.T) {
 		recorder := performRequest(t, "DELETE", "/logout", Logout, nil, nil, nil)
 
 		authtest.AssertStatusCode(t, recorder, http.StatusBadRequest)
@@ -55,7 +55,7 @@ func TestRefresh(t *testing.T) {
 		authtest.AssertStatusCode(t, recorder, http.StatusMethodNotAllowed)
 	})
 
-	t.Run("returns BadRequest without json 'Conten-Type' header", func(t *testing.T) {
+	t.Run("returns BadRequest without json 'Content-Type' header", func(t *testing.T) {
 		recorder := performRequest(t, "POST", "/refresh", Refresh, nil, nil, nil)
 
 		authtest.AssertStatusCode(t, recorder, http.StatusBadRequest)

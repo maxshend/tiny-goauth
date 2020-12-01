@@ -29,7 +29,7 @@ func TestEmailRegister(t *testing.T) {
 		authtest.AssertStatusCode(t, recorder, http.StatusMethodNotAllowed)
 	})
 
-	t.Run("returns BadRequest without json 'Conten-Type' header", func(t *testing.T) {
+	t.Run("returns BadRequest without json 'Content-Type' header", func(t *testing.T) {
 		recorder := performRequest(t, "POST", "/email/register", EmailRegister, nil, nil, nil)
 
 		authtest.AssertStatusCode(t, recorder, http.StatusBadRequest)
@@ -69,7 +69,7 @@ func TestEmailLogin(t *testing.T) {
 		authtest.AssertStatusCode(t, recorder, http.StatusMethodNotAllowed)
 	})
 
-	t.Run("returns BadRequest without json 'Conten-Type' header", func(t *testing.T) {
+	t.Run("returns BadRequest without json 'Content-Type' header", func(t *testing.T) {
 		recorder := performRequest(t, "POST", "/email/login", EmailLogin, nil, nil, nil)
 
 		authtest.AssertStatusCode(t, recorder, http.StatusBadRequest)
@@ -148,6 +148,10 @@ func (t *testDL) CreateUser(user *models.User) error {
 }
 
 func (t *testDL) DeleteUser(id int64) error {
+	if id == 0 {
+		return invalidUserID
+	}
+
 	return nil
 }
 
