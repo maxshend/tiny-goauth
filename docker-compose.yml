@@ -68,6 +68,9 @@ services:
       - db_auth
     networks:
       - auth_network
+    volumes:
+      - ./migrations:/migrations
+      - ./Makefile.migrator:/Makefile
     environment:
       DB_URL: $DB_URL
 

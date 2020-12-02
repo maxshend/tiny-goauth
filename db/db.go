@@ -40,6 +40,7 @@ type dbErr string
 func (e dbErr) Error() string { return string(e) }
 
 const zeroDeleteRows = dbErr("No row found to delete")
+const zeroInsertedRows = dbErr("No rows have been inserted")
 
 // Init initializes connection to the database
 func Init() (DataLayer, error) {

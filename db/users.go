@@ -7,12 +7,36 @@ import (
 
 // CreateUser creates a new record in users database table
 func (s *datastore) CreateUser(user *models.User) error {
-	err := s.db.QueryRow(
+	tr, err := s.db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tr.Rollback(ctx)
+
+	err = tr.QueryRow(
 		ctx,
 		"INSERT INTO users(email, password) VALUES($1, $2) RETURNING id, created_at",
 		user.Email, user.Password,
 	).Scan(&user.ID, &user.CreatedAt)
 	if err != nil {
+		return err
+	}
+
+	for _, role := range user.Roles {
+		commandTag, err := tr.Exec(
+			ctx,
+			"INSERT INTO user_roles(user_id, role_id) VALUES($1, (SELECT id FROM roles WHERE name = $2))",
+			user.ID, role,
+		)
+		if err != nil {
+			return err
+		}
+		if commandTag.RowsAffected() != 1 {
+			return zeroInsertedRows
+		}
+	}
+
+	if err = tr.Commit(ctx); err != nil {
 		return err
 	}
 

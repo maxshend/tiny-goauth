@@ -5,8 +5,8 @@ CREATE TABLE IF NOT EXISTS roles(
 
 CREATE TABLE IF NOT EXISTS user_roles(
   id SERIAL PRIMARY KEY,
-  role_id INT REFERENCES roles ON DELETE CASCADE,
-  user_id INT REFERENCES users ON DELETE CASCADE
+  role_id INT NOT NULL REFERENCES roles ON DELETE CASCADE,
+  user_id INT NOT NULL REFERENCES users ON DELETE CASCADE
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS index_user_roles_on_role_id_and_user_id ON user_roles (role_id, user_id);

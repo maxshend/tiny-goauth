@@ -214,6 +214,7 @@ func createExternalUser(user *models.User) ([]byte, error) {
 		ID:        user.ID,
 		Email:     user.Email,
 		Payload:   user.Payload,
+		Roles:     user.Roles,
 		CreatedAt: user.CreatedAt,
 	}
 
