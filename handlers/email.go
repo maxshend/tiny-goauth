@@ -19,7 +19,7 @@ func EmailRegister(deps *Deps) http.Handler {
 		err := dec.Decode(&user)
 		if err != nil {
 			deps.Logger.RequestError(r, err)
-			w.WriteHeader(http.StatusInternalServerError)
+			respondError(w, http.StatusUnprocessableEntity, err.Error())
 			return
 		}
 

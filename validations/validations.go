@@ -61,6 +61,39 @@ func Init(db db.DataLayer) (validate *validator.Validate, translator ut.Translat
 		return
 	}
 
+	err = validate.RegisterValidation("roles", func(fl validator.FieldLevel) bool {
+		flVal := fl.Field().Interface().([]string)
+
+		if len(flVal) == 0 {
+			return true
+		}
+
+		roles, err := db.GetRoles()
+		if err != nil {
+			return false
+		}
+
+		for _, r := range flVal {
+			found := false
+
+			for _, role := range roles {
+				if role == r {
+					found = true
+					break
+				}
+			}
+
+			if !found {
+				return false
+			}
+		}
+
+		return true
+	})
+	if err != nil {
+		return
+	}
+
 	err = validate.RegisterValidation("unique_user", func(fl validator.FieldLevel) bool {
 		exists, err := db.UserExistsWithField(fl)
 		if err != nil {

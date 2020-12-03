@@ -85,3 +85,22 @@ func (s *datastore) DeleteUser(id int64) error {
 
 	return nil
 }
+
+func (s *datastore) GetRoles() (roles []string, err error) {
+	rows, err := s.db.Query(ctx, "SELECT name FROM roles")
+	if err != nil {
+		return
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var role string
+		if err = rows.Scan(&role); err != nil {
+			return
+		}
+
+		roles = append(roles, role)
+	}
+
+	return
+}

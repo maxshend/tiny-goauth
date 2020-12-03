@@ -35,10 +35,10 @@ func TestEmailRegister(t *testing.T) {
 		authtest.AssertStatusCode(t, recorder, http.StatusBadRequest)
 	})
 
-	t.Run("returns InternalServerError when body isn't valid json", func(t *testing.T) {
+	t.Run("returns UnprocessableEntity when body isn't valid json", func(t *testing.T) {
 		recorder := performRequest(t, "POST", "/email/register", EmailRegister, strings.NewReader("invalid"), jsonHeaders, nil)
 
-		authtest.AssertStatusCode(t, recorder, http.StatusInternalServerError)
+		authtest.AssertStatusCode(t, recorder, http.StatusUnprocessableEntity)
 	})
 
 	t.Run("returns UnprocessableEntity with invalid user data", func(t *testing.T) {
@@ -153,6 +153,10 @@ func (t *testDL) DeleteUser(id int64) error {
 	}
 
 	return nil
+}
+
+func (t *testDL) GetRoles() ([]string, error) {
+	return make([]string, 0), nil
 }
 
 func (t *testDL) UserByEmail(email string) (*models.User, error) {
