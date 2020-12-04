@@ -27,6 +27,7 @@ type DataLayer interface {
 	GetCacheValue(key string) (string, error)
 	DeleteUser(id int64) error
 	GetRoles() ([]string, error)
+	CreateRole(name string) error
 	Close()
 	Migrate() error
 }

@@ -3,6 +3,7 @@ package handlers
 import (
 	"bytes"
 	"crypto/rsa"
+	"errors"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -189,4 +190,12 @@ func (t *testDL) DeleteCache(key string) (int64, error) {
 
 func (t *testDL) GetCacheValue(key string) (string, error) {
 	return "", nil
+}
+
+func (t *testDL) CreateRole(role string) error {
+	if role == "duplicate" {
+		return errors.New("duplicate")
+	}
+
+	return nil
 }

@@ -57,6 +57,7 @@ func main() {
 	http.Handle("/logout", handlers.Logout(deps))
 	http.Handle("/refresh", handlers.Refresh(deps))
 	http.Handle("/internal/users/delete", handlers.DeleteUser(deps))
+	http.Handle("/internal/roles", handlers.CreateRole(deps))
 
 	logger.FatalError(server.ListenAndServe())
 }

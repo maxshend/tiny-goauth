@@ -115,3 +115,15 @@ func (s *datastore) GetRoles() (roles []string, err error) {
 
 	return
 }
+
+func (s *datastore) CreateRole(name string) error {
+	ct, err := s.db.Exec(ctx, "INSERT INTO roles(name) VALUES($1)", name)
+	if err != nil {
+		return err
+	}
+	if ct.RowsAffected() != 1 {
+		return zeroInsertedRows
+	}
+
+	return nil
+}
