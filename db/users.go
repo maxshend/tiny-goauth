@@ -2,6 +2,7 @@ package db
 
 import (
 	"github.com/go-playground/validator"
+	"github.com/jackc/pgx/v4"
 	"github.com/maxshend/tiny_goauth/models"
 )
 
@@ -22,20 +23,30 @@ func (s *datastore) CreateUser(user *models.User) error {
 		return err
 	}
 
+	batch := &pgx.Batch{}
+
 	for _, role := range user.Roles {
-		commandTag, err := tr.Exec(
-			ctx,
+		batch.Queue(
 			"INSERT INTO user_roles(user_id, role_id) VALUES($1, (SELECT id FROM roles WHERE name = $2))",
 			user.ID, role,
 		)
+	}
+
+	br := tr.SendBatch(ctx, batch)
+
+	for i := 0; i < len(user.Roles); i++ {
+		ct, err := br.Exec()
 		if err != nil {
 			return err
 		}
-		if commandTag.RowsAffected() != 1 {
+		if ct.RowsAffected() != 1 {
 			return zeroInsertedRows
 		}
 	}
 
+	if err = br.Close(); err != nil {
+		return err
+	}
 	if err = tr.Commit(ctx); err != nil {
 		return err
 	}
