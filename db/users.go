@@ -116,13 +116,40 @@ func (s *datastore) GetRoles() (roles []string, err error) {
 	return
 }
 
-func (s *datastore) CreateRole(name string) error {
-	ct, err := s.db.Exec(ctx, "INSERT INTO roles(name) VALUES($1)", name)
+func (s *datastore) CreateRoles(names []string) (err error) {
+	batch := &pgx.Batch{}
+
+	for _, name := range names {
+		batch.Queue("INSERT INTO roles(name) VALUES($1)", name)
+	}
+
+	br := s.db.SendBatch(ctx, batch)
+
+	for i := 0; i < len(names); i++ {
+		ct, err := br.Exec()
+		if err != nil {
+			return err
+		}
+		if ct.RowsAffected() != 1 {
+			return zeroInsertedRows
+		}
+	}
+
+	if err = br.Close(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *datastore) DeleteRole(name string) error {
+	commandTag, err := s.db.Exec(ctx, "DELETE FROM roles WHERE name = $1", name)
 	if err != nil {
 		return err
 	}
-	if ct.RowsAffected() != 1 {
-		return zeroInsertedRows
+
+	if commandTag.RowsAffected() != 1 {
+		return zeroDeleteRows
 	}
 
 	return nil

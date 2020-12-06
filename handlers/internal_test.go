@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"bytes"
 	"net/http"
 	"testing"
 
@@ -39,33 +40,82 @@ func TestDeleteUser(t *testing.T) {
 	})
 }
 
-func TestCreateRole(t *testing.T) {
+func TestCreateRoles(t *testing.T) {
 	t.Run("returns MethodNotAllowed for non-post requests", func(t *testing.T) {
-		recorder := performRequest(t, "GET", "/internal/roles", CreateRole, nil, jsonHeaders, nil)
+		recorder := performRequest(t, "GET", "/internal/roles", CreateRoles, nil, jsonHeaders, nil)
 
 		authtest.AssertStatusCode(t, recorder, http.StatusMethodNotAllowed)
 	})
 
 	t.Run("returns BadRequest without json 'Content-Type' header", func(t *testing.T) {
-		recorder := performRequest(t, "POST", "/internal/roles", CreateRole, nil, nil, nil)
+		recorder := performRequest(t, "POST", "/internal/roles", CreateRoles, nil, nil, nil)
 
 		authtest.AssertStatusCode(t, recorder, http.StatusBadRequest)
 	})
 
 	t.Run("returns UnprocessableEntity when Role already exists", func(t *testing.T) {
-		recorder := performRequest(t, "POST", "/internal/roles?role=duplicate", CreateRole, nil, jsonHeaders, nil)
+		body := bytes.NewBuffer([]byte(`{"roles": ["duplicate"]}`))
+		recorder := performRequest(t, "POST", "/internal/roles", CreateRoles, body, jsonHeaders, nil)
+
+		authtest.AssertStatusCode(t, recorder, http.StatusUnprocessableEntity)
+	})
+
+	t.Run("returns UnprocessableEntity with blank roles array", func(t *testing.T) {
+		body := bytes.NewBuffer([]byte(`{"roles": []}`))
+		recorder := performRequest(t, "POST", "/internal/roles", CreateRoles, body, jsonHeaders, nil)
+
+		authtest.AssertStatusCode(t, recorder, http.StatusUnprocessableEntity)
+	})
+
+	t.Run("returns UnprocessableEntity with invalid roles type", func(t *testing.T) {
+		body := bytes.NewBuffer([]byte(`{"roles": "invalid"}`))
+		recorder := performRequest(t, "POST", "/internal/roles", CreateRoles, body, jsonHeaders, nil)
 
 		authtest.AssertStatusCode(t, recorder, http.StatusUnprocessableEntity)
 	})
 
 	t.Run("returns UnprocessableEntity with invalid Role Name", func(t *testing.T) {
-		recorder := performRequest(t, "POST", "/internal/roles?name=", CreateRole, nil, jsonHeaders, nil)
+		body := bytes.NewBuffer([]byte(`{"roles": [""]}`))
+		recorder := performRequest(t, "POST", "/internal/roles", CreateRoles, body, jsonHeaders, nil)
 
 		authtest.AssertStatusCode(t, recorder, http.StatusUnprocessableEntity)
 	})
 
 	t.Run("returns OK with valid Role", func(t *testing.T) {
-		recorder := performRequest(t, "POST", "/internal/roles?name=test", CreateRole, nil, jsonHeaders, nil)
+		body := bytes.NewBuffer([]byte(`{"roles": ["test"]}`))
+		recorder := performRequest(t, "POST", "/internal/roles", CreateRoles, body, jsonHeaders, nil)
+
+		authtest.AssertStatusCode(t, recorder, http.StatusOK)
+	})
+}
+
+func TestDeleteRole(t *testing.T) {
+	t.Run("returns MethodNotAllowed for non-delete requests", func(t *testing.T) {
+		recorder := performRequest(t, "GET", "/internal/roles/delete", DeleteRole, nil, jsonHeaders, nil)
+
+		authtest.AssertStatusCode(t, recorder, http.StatusMethodNotAllowed)
+	})
+
+	t.Run("returns BadRequest without json 'Content-Type' header", func(t *testing.T) {
+		recorder := performRequest(t, "DELETE", "/internal/roles/delete", DeleteRole, nil, nil, nil)
+
+		authtest.AssertStatusCode(t, recorder, http.StatusBadRequest)
+	})
+
+	t.Run("returns UnprocessableEntity when Role with name doesn't exist", func(t *testing.T) {
+		recorder := performRequest(t, "DELETE", "/internal/roles/delete?name=not_found", DeleteRole, nil, jsonHeaders, nil)
+
+		authtest.AssertStatusCode(t, recorder, http.StatusUnprocessableEntity)
+	})
+
+	t.Run("returns UnprocessableEntity with invalid Role Name", func(t *testing.T) {
+		recorder := performRequest(t, "DELETE", "/internal/roles/delete?name=", DeleteRole, nil, jsonHeaders, nil)
+
+		authtest.AssertStatusCode(t, recorder, http.StatusUnprocessableEntity)
+	})
+
+	t.Run("returns OK with valid Role Name", func(t *testing.T) {
+		recorder := performRequest(t, "DELETE", "/internal/roles/delete?name=test", DeleteRole, nil, jsonHeaders, nil)
 
 		authtest.AssertStatusCode(t, recorder, http.StatusOK)
 	})
