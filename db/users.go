@@ -1,6 +1,8 @@
 package db
 
 import (
+	"strings"
+
 	"github.com/go-playground/validator"
 	"github.com/jackc/pgx/v4"
 	"github.com/maxshend/tiny_goauth/models"
@@ -142,13 +144,13 @@ func (s *datastore) CreateRoles(names []string) (err error) {
 	return nil
 }
 
-func (s *datastore) DeleteRole(name string) error {
-	commandTag, err := s.db.Exec(ctx, "DELETE FROM roles WHERE name = $1", name)
+func (s *datastore) DeleteRoles(names []string) error {
+	commandTag, err := s.db.Exec(ctx, "DELETE FROM roles WHERE name = ANY($1::varchar[])", "{"+strings.Join(names, ",")+"}")
 	if err != nil {
 		return err
 	}
 
-	if commandTag.RowsAffected() != 1 {
+	if commandTag.RowsAffected() < 1 {
 		return zeroDeleteRows
 	}
 

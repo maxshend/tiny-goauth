@@ -58,7 +58,7 @@ func main() {
 	http.Handle("/refresh", handlers.Refresh(deps))
 	http.Handle("/internal/users/delete", handlers.DeleteUser(deps))
 	http.Handle("/internal/roles", handlers.CreateRoles(deps))
-	http.Handle("/internal/roles/delete", handlers.DeleteRole(deps))
+	http.Handle("/internal/roles/delete", handlers.DeleteRoles(deps))
 
 	logger.FatalError(server.ListenAndServe())
 }

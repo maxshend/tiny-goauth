@@ -61,16 +61,25 @@ func CreateRoles(deps *Deps) http.Handler {
 	}))))
 }
 
-// DeleteRole removes a role record
-func DeleteRole(deps *Deps) http.Handler {
+// DeleteRoles removes a role record
+func DeleteRoles(deps *Deps) http.Handler {
 	return logHandler(deps, jsonHandler(deleteHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		name := r.FormValue("name")
-		if len(name) == 0 {
-			respondError(w, http.StatusUnprocessableEntity, blankRole)
+		r.ParseForm()
+
+		roles := r.Form["roles"]
+		if len(roles) == 0 {
+			respondError(w, http.StatusUnprocessableEntity, blankRoles)
 			return
 		}
 
-		if err := deps.DB.DeleteRole(name); err != nil {
+		for _, role := range roles {
+			if len(role) == 0 {
+				respondError(w, http.StatusUnprocessableEntity, blankRole)
+				return
+			}
+		}
+
+		if err := deps.DB.DeleteRoles(roles); err != nil {
 			respondError(w, http.StatusUnprocessableEntity, err.Error())
 			return
 		}

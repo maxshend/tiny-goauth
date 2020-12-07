@@ -91,31 +91,31 @@ func TestCreateRoles(t *testing.T) {
 
 func TestDeleteRole(t *testing.T) {
 	t.Run("returns MethodNotAllowed for non-delete requests", func(t *testing.T) {
-		recorder := performRequest(t, "GET", "/internal/roles/delete", DeleteRole, nil, jsonHeaders, nil)
+		recorder := performRequest(t, "GET", "/internal/roles/delete", DeleteRoles, nil, jsonHeaders, nil)
 
 		authtest.AssertStatusCode(t, recorder, http.StatusMethodNotAllowed)
 	})
 
 	t.Run("returns BadRequest without json 'Content-Type' header", func(t *testing.T) {
-		recorder := performRequest(t, "DELETE", "/internal/roles/delete", DeleteRole, nil, nil, nil)
+		recorder := performRequest(t, "DELETE", "/internal/roles/delete", DeleteRoles, nil, nil, nil)
 
 		authtest.AssertStatusCode(t, recorder, http.StatusBadRequest)
 	})
 
 	t.Run("returns UnprocessableEntity when Role with name doesn't exist", func(t *testing.T) {
-		recorder := performRequest(t, "DELETE", "/internal/roles/delete?name=not_found", DeleteRole, nil, jsonHeaders, nil)
+		recorder := performRequest(t, "DELETE", "/internal/roles/delete?roles=not_found", DeleteRoles, nil, jsonHeaders, nil)
 
 		authtest.AssertStatusCode(t, recorder, http.StatusUnprocessableEntity)
 	})
 
 	t.Run("returns UnprocessableEntity with invalid Role Name", func(t *testing.T) {
-		recorder := performRequest(t, "DELETE", "/internal/roles/delete?name=", DeleteRole, nil, jsonHeaders, nil)
+		recorder := performRequest(t, "DELETE", "/internal/roles/delete?roles=", DeleteRoles, nil, jsonHeaders, nil)
 
 		authtest.AssertStatusCode(t, recorder, http.StatusUnprocessableEntity)
 	})
 
 	t.Run("returns OK with valid Role Name", func(t *testing.T) {
-		recorder := performRequest(t, "DELETE", "/internal/roles/delete?name=test", DeleteRole, nil, jsonHeaders, nil)
+		recorder := performRequest(t, "DELETE", "/internal/roles/delete?roles=test", DeleteRoles, nil, jsonHeaders, nil)
 
 		authtest.AssertStatusCode(t, recorder, http.StatusOK)
 	})

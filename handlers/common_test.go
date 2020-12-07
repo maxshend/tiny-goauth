@@ -202,8 +202,8 @@ func (t *testDL) CreateRoles(names []string) error {
 	return nil
 }
 
-func (t *testDL) DeleteRole(name string) error {
-	if name == "not_found" {
+func (t *testDL) DeleteRoles(names []string) error {
+	if names[0] == "not_found" {
 		return errors.New("not found")
 	}
 

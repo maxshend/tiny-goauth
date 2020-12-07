@@ -28,7 +28,7 @@ type DataLayer interface {
 	DeleteUser(id int64) error
 	GetRoles() ([]string, error)
 	CreateRoles(names []string) error
-	DeleteRole(name string) error
+	DeleteRoles(names []string) error
 	Close()
 	Migrate() error
 }
