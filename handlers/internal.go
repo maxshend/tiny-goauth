@@ -63,7 +63,7 @@ func CreateRoles(deps *Deps) http.Handler {
 
 // DeleteRoles removes a role record
 func DeleteRoles(deps *Deps) http.Handler {
-	return logHandler(deps, jsonHandler(deleteHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return logHandler(deps, deleteHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		r.ParseForm()
 
 		roles := r.Form["roles"]
@@ -83,5 +83,5 @@ func DeleteRoles(deps *Deps) http.Handler {
 			respondError(w, http.StatusUnprocessableEntity, err.Error())
 			return
 		}
-	}))))
+	})))
 }

@@ -2,6 +2,8 @@
 .gitignore
 
 Dockerfile
+Dockerfile.development
+Dockerfile.migrator
 docker-compose.yml
 
 README.md
